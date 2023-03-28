@@ -1,0 +1,69 @@
+[tool.poetry]
+name = "FastApi Start Kit"
+version = "v0.01"
+description = "FastApi Start Kit"
+authors = ["phoenix <hypofiasco@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.9.12,<3.12"
+ipython = "8.11.0"
+fastapi = "0.95.0"
+ujson = "2.0"
+httpx = "0.23.3"
+pycryptodomex = "3.17"
+passlib = "1.7.4"
+bcrypt = "4.0.1"
+pyopenssl = "23.0.0"
+python-jose = { extras = ["cryptography"], version = "3.3.0" }
+python-multipart = "0.0.6"
+uvicorn = "0.21.1"
+gunicorn = "20.1.0"
+loguru = "0.6.0"
+aioredis = "2.0.1"
+aiofiles = { extras = ["hiredis"], version = "23.1.0" }
+sentry-sdk = { extras = ["fastapi"], version = "1.17.0" }
+protobuf = "4.22.1"
+grpcio = "1.51.3"
+grpcio-tools = "1.51.3"
+tortoise-orm = { extras = ["asyncmy"], version = "0.19.3" }
+fastapi-cache2 = { extras = ["redis"], version = "0.2.1" }
+fastapi-pagination = {extras = ["tortoise-orm"], version = "^0.11.4"}
+mypy = "1.1.1"
+typer = "0.7.0"
+aerich = "0.7.1"
+apache-skywalking = { extras = ["http"], version = "1.0.0" }
+# strawberry-graphql = "0.165.1"
+
+[tool.poetry.dev-dependencies]
+# poetry install --no-dev
+taskipy = "1.10.3"
+asynctest = "0.13.0"
+bandit = "1.7.5"
+black = "23.1.0"
+flake8 = "6.0.0"
+isort = "5.12.0"
+pytest-asyncio = "0.15.1"
+
+[[tool.poetry.source]]
+name = "aliyun"
+default = true
+url = "https://mirrors.aliyun.com/pypi/simple/"
+
+
+[tool.aerich]
+tortoise_orm = "storages.relational.migrate.env.TORTOISE_ORM_CONFIG"
+location = "storages/relational/migrate/versions"
+src_folder = "./."
+
+
+[build-system]
+requires = ["poetry>=1.1.6"]
+build-backend = "poetry.masonry.api"
+
+# If poetry install failed, excute follow shell command
+# shell
+# >>> poetry cache clear . --all
+# >>> rm poetry.lock
+# >>> poetry install -vvv
+# export requirements.tx
+# >>> poetry export -f requirements.txt --output requirements.txt --without-hashes

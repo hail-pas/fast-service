@@ -1,0 +1,36 @@
+syntax = "proto3";  // Use proto3
+
+// RPC In
+message HelloIn {
+  string name = 1;
+  int32 age = 2;
+  bool super_user = 3;
+  enum Corpus {
+    UNIVERSAL = 0;  // must contain
+    WEB = 1;
+    IMAGES = 2;
+    LOCAL = 3;
+    NEWS = 4;
+    PRODUCTS = 5;
+    VIDEO = 6;
+  }
+  Corpus corpus = 4;
+}
+
+// RPC Out
+message HelloOut {
+  string infos = 1;
+}
+
+message MultiHelloOut {
+  repeated HelloOut replies = 1;
+}
+
+// Service Definition.
+service Hello {
+  rpc HelloRPC (HelloIn) returns (HelloOut);
+  rpc MultiHelloRPC (HelloIn) returns (MultiHelloOut);
+  rpc ResStreamHelloRPC (HelloIn) returns (stream HelloOut);
+  rpc ReqStreamHelloRPC (stream HelloIn) returns (MultiHelloOut);
+  rpc BiStreamHelloRPC (stream HelloIn) returns (stream HelloOut);
+}
