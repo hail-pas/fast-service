@@ -130,13 +130,10 @@ class Project(BaseModel):
     NAME: str = "FastAPI"
     VERSION: str = "v1"
     DEBUG: bool = False
-    LOG_COLOR: bool = False
     LOG_DIR: str = "logs/"
     ENVIRONMENT: str = EnvironmentEnum.production.value
     DESCRIPTION: str = "FastAPI"
     BASE_DIR: Path = BASE_DIR
-    # SentryDsn
-    SENTRY_DSN: Optional[str]
 
     @validator("ENVIRONMENT", allow_reuse=True)
     def check_if_environment_in(cls, v):  # noqa

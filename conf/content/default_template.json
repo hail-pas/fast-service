@@ -23,18 +23,28 @@
   "SERVER": {
     "HOST": "0.0.0.0",
     "PORT": 8000,
-    "WHITELIST": [
+    "ALLOW_HOSTS": [
     ],
-    "REQUEST_SCHEME": "https"
+    "REQUEST_SCHEME": "https",
+    "TIMEZONE": "Asia/Shanghai",
+    "CORS": {
+      "ALLOW_ORIGIN": ["*"],
+      "ALLOW_CREDENTIAL": true,
+      "ALLOW_METHODS": ["*"],
+      "ALLOW_HEADERS": ["*"]
+    },
+    "STATIC_PATH": "/static",
+    "DOCS_URL": "/docs",
+    "REDOC_URL": "/redoc"
   },
   "PROJECT": {
+    "UNIQUE_CODE": "FastService",
+    "VERSION": "v0.1",
     "DEBUG": false,
     "ENVIRONMENT": "Production",
-    "NAME": "DjangoStartKit",
-    "DESCRIPTION": "Django-start-kit",
-    "LANGUAGE_CODE": "zh-hans",
-    "TIME_ZONE": "Asia/Shanghai",
-    "USE_TZ": false
+    "NAME": "FastService",
+    "DESCRIPTION": "FastService Start Kit",
+    "LOG_DIR": "logs/"
   },
   "HBASE": {
     "SERVERS": [
@@ -47,9 +57,14 @@
   },
   "JWT": {
     "SECRET": "secret",
-    "AUTH_HEADER_PREFIX": "JWT",
     "EXPIRATION_DELTA_MINUTES": 432000,
     "REFRESH_EXPIRATION_DELTA_DELTA_MINUTES": 4320
+  },
+  "AES": {
+    "SECRET": "secret"
+  },
+  "Sign": {
+    "SECRET": "secret"
   },
   "K8S": {
     "CONFIG_FILE": "file_path",
@@ -58,5 +73,9 @@
     "IMAGE": "DjangoStartKit",
     "PVC_NAME": "pvc_name",
     "CONFIG_MAP_NAME": "config_map_name"
-  }
+  },
+  "SENTRY_DSN": {
+    "DSN": ""
+  },
+  "THIRD_API_CONFIGS": null
 }
