@@ -266,7 +266,6 @@ grpcio = "*"
 grpcio-tools = "*"
 packaging = "*"
 psutil = "*"
-requests = {version = ">=2.26.0", optional = true, markers = "extra == \"all\" or extra == \"http\""}
 wrapt = "*"
 
 [package.extras]
@@ -2787,7 +2786,7 @@ reference = "aliyun"
 name = "requests"
 version = "2.28.2"
 description = "Python HTTP for Humans."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7, <4"
 files = [
@@ -3685,4 +3684,4 @@ reference = "aliyun"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9.12,<3.12"
-content-hash = "81185190f1b7a7ffed01c87ea0677441c2fded85d45714c110106c3f629bc42a"
+content-hash = "863b628b8af004ef350268afd0b3e8cb39b1abb39c126b544a8e49cbbbfba72b"

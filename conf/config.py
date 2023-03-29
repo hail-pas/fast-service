@@ -127,13 +127,14 @@ class Server(HostAndPort):
 
 class Project(BaseModel):
     UNIQUE_CODE: str  # 项目唯一标识，用于redis前缀
-    NAME: str = "FastAPI"
+    NAME: str = "FastService"
     VERSION: str = "v1"
     DEBUG: bool = False
     LOG_DIR: str = "logs/"
     ENVIRONMENT: str = EnvironmentEnum.production.value
     DESCRIPTION: str = "FastAPI"
     BASE_DIR: Path = BASE_DIR
+    SKYWALKINGT_SERVER: Optional[str] = None
 
     @validator("ENVIRONMENT", allow_reuse=True)
     def check_if_environment_in(cls, v):  # noqa
@@ -204,8 +205,8 @@ class ThirdApiConfigs(BaseModel):
     URORA: UroraConfig  # noqa
 
 
-class SentryDSN(BaseModel):
-    dsn: str
+# class SentryDSN(BaseModel):
+#     DSN: str
 
 
 class LocalConfig(BaseSettings):
@@ -237,7 +238,7 @@ class LocalConfig(BaseSettings):
 
     THIRD_API_CONFIGS: Optional[ThirdApiConfigs]
 
-    SENTRY_DSN: Optional[SentryDSN]
+    # SENTRY_DSN: Optional[SentryDSN]
 
     # ApiInfo
 
