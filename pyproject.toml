@@ -5,7 +5,7 @@ description = "FastApi Start Kit"
 authors = ["phoenix <hypofiasco@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.9.12,<3.12"
+python = ">=3.9.0,<3.12"
 ipython = "8.11.0"
 fastapi = "0.95.0"
 ujson = "2.0"
