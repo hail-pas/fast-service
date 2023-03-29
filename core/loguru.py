@@ -151,6 +151,9 @@ def init_loguru():
         "uvicorn.error",
         "uvicorn.asgi",
         "uvicorn.access",
+        # "gunicorn.error",
+        # "gunicorn.asgi",
+        # "gunicorn.access"
         "fastapi",
     )
 
@@ -158,6 +161,21 @@ def init_loguru():
         level=logging.getLevelName(LOG_LEVEL), modules=UVICORN_LOGGING_MODULES
     )
 
-    # disable logging
+    # disable duplicate logging
     logging.getLogger("root").handlers.clear()
     logging.getLogger("uvicorn").handlers.clear()
+
+
+from gunicorn import glogging  # type: ignore
+
+class GunicornLogger(glogging.Logger):
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        LOGGING_MODULES = (
+            "gunicorn.error",
+            "gunicorn.asgi",
+            "gunicorn.access",
+        )
+        setup_loguru_logging_intercept(
+            level=logging.getLevelName(LOG_LEVEL), modules=LOGGING_MODULES
+        )
