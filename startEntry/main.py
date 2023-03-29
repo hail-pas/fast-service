@@ -1,12 +1,13 @@
 import sys
+
+sys.path.append(".")  # 将当前目录加入到环境变量中
+
 import asyncio
 
 import gunicorn.app.base
 from aerich import Command
 
 from conf.config import local_configs
-
-sys.path.append(local_configs.PROJECT.BASE_DIR)
 
 """FastAPI"""
 

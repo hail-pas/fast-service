@@ -11,6 +11,4 @@ RUN pip install -v poetry
 RUN poetry install
 # RUN python manage.py migrate  使用 Django 自带的 call_command 执行
 EXPOSE 8000
-RUN chmod +x start.sh
-#CMD ["gunicorn", "--config", "conf/gunicorn/config.py", "--log-config", "conf/gunicorn/logging.conf", "core.wsgi:application"]
-CMD ["./start.sh"]
+CMD ["python", "startEntry/main.py"]

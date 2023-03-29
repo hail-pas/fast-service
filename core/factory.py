@@ -198,5 +198,8 @@ def create_app(current_settings: LocalConfig):
 
     return main_app
 
-logger.bind(json=True).info({**local_configs.PROJECT.dict(), **local_configs.SERVER.dict()})
+
+logger.bind(json=True).info(
+    {**local_configs.PROJECT.dict(), **local_configs.SERVER.dict()}
+)
 app = create_app(current_settings=local_configs)
