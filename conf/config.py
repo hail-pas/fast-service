@@ -35,14 +35,15 @@ class Relational(HostAndPort):
     USERNAME: str
     PASSWORD: str
     DB: str
-    type: Literal["postgresql", "mysql"] = "postgresql"
+    TYPE: Literal["postgresql", "mysql"] = "postgresql"
+    TIMEZONE: Optional[str] = None
 
     @property
     def url(self):
         pkg = "asyncpg"
-        if self.type == "mysql":
+        if self.TYPE == "mysql":
             pkg = "aiomysql"
-        return f"{self.type}+{pkg}://{self.USERNAME}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DB}"  # noqa
+        return f"{self.TYPE}+{pkg}://{self.USERNAME}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DB}"  # noqa
 
     @property
     def tortoise_orm_config(self):
@@ -112,7 +113,6 @@ class CorsConfig(BaseModel):
 
 class Server(HostAndPort):
     REQUEST_SCHEME: str = "https"
-    TIMEZONE: Optional[str] = None
     CORS: CorsConfig = CorsConfig()
     WORKERS_NUM: int = (
         multiprocessing.cpu_count() * int(os.getenv("WORKERS_PER_CORE", "2"))
@@ -128,12 +128,11 @@ class Server(HostAndPort):
 class Project(BaseModel):
     UNIQUE_CODE: str  # 项目唯一标识，用于redis前缀
     NAME: str = "FastService"
+    DESCRIPTION: str = "FastService"
     VERSION: str = "v1"
     DEBUG: bool = False
-    LOG_DIR: str = "logs/"
     ENVIRONMENT: str = EnvironmentEnum.production.value
-    DESCRIPTION: str = "FastAPI"
-    BASE_DIR: Path = BASE_DIR
+    LOG_DIR: str = "logs/"
     SKYWALKINGT_SERVER: Optional[str] = None
     SENTRY_DSN: Optional[str] = None
 
@@ -155,6 +154,10 @@ class Project(BaseModel):
             ), "Production cannot set with debug enabled"
         return v
 
+    @property
+    def BASE_DIR(self) -> Path:
+        return BASE_DIR
+
 
 class Hbase(BaseModel):
     SERVERS: list = []
@@ -169,14 +172,6 @@ class Jwt(BaseModel):
     # AUTH_HEADER_PREFIX: str = "JWT"
     EXPIRATION_DELTA_MINUTES: int = 432000
     REFRESH_EXPIRATION_DELTA_DELTA_MINUTES: int = 4320
-
-
-class Aes(BaseModel):
-    SECRET: Optional[str]
-
-
-class Sign(BaseModel):
-    SECRET: Optional[str]
 
 
 class K8s(HostAndPort):
@@ -221,15 +216,15 @@ class LocalConfig(BaseSettings):
 
     RELATIONAL: Relational
 
-    REDIS: Optional[Redis]
-
-    OSS: Optional[Oss]
+    REDIS: Redis
 
     JWT: Jwt
 
-    AES: Optional[Aes]
+    AES_SECRET: Optional[str]
 
-    Sign: Optional[Sign]
+    SIGN_SECRET: Optional[str]
+
+    OSS: Optional[Oss]
 
     HBASE: Optional[Hbase]
 
@@ -238,16 +233,6 @@ class LocalConfig(BaseSettings):
     K8S: Optional[K8s]
 
     THIRD_API_CONFIGS: Optional[ThirdApiConfigs]
-
-    # SENTRY_DSN: Optional[SentryDSN]
-
-    # ApiInfo
-
-    # API_V1_ROUTE: str = "/api"
-    # OPED_API_ROUTE: str = "/api/openapi.json"
-
-    # STATIC_PATH: str = "/static"
-    # STATIC_DIR: str = f"{ROOT}/static"
 
     class Config:
         case_sensitive = True

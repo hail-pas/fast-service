@@ -97,7 +97,7 @@ def get_client_ip(request: Request):
 def datetime_now():
     # 返回带有时区信息的时间
     return datetime.now(
-        tz=ZoneInfo(local_configs.SERVER.TIMEZONE or "Asia/Shanghai")
+        tz=ZoneInfo(local_configs.RELATIONAL.TIMEZONE or "Asia/Shanghai")
     )
 
 

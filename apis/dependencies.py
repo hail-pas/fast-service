@@ -151,24 +151,31 @@ async def sign_check(
     sign_str = sign_str + f".{x_timestamp}"
     if int(time.time()) - x_timestamp > 60:
         raise ApiException("timestamp expired")
-    if not x_signature or not SignAuth(local_configs.Sign.SECRET).verify(
+    if not x_signature or not SignAuth(local_configs.SIGN_SECRET).verify(
         x_signature, sign_str
     ):
         raise ApiException("sign check failed")
 
 
-async def host_checker(
-    request: Request,
-):
-    if "*" in local_configs.SERVER.ALLOW_HOSTS:
-        return
-    caller_host = get_client_ip(request)
-    if "." in caller_host:
-        host_segments = caller_host.strip().split(".")
-        if len(host_segments) == 4:
-            blur_segments = ["*", "*", "*", "*"]
-            for i in range(4):
-                blur_segments[i] = host_segments[i]
-                if ".".join(blur_segments) in local_configs.SERVER.ALLOW_HOSTS:
-                    return
-    raise ApiException(f"IP {caller_host} 不在访问白名单")
+class CheckAllowedHost:
+    allowed_hosts: set
+
+    def __init__(self, allowed_hosts: set = {"*"}) -> None:
+        self.allowed_hosts = allowed_hosts
+
+    def __call__(self, request: Request):
+        if "*" in local_configs.SERVER.ALLOW_HOSTS:
+            return
+        caller_host = get_client_ip(request)
+        if "." in caller_host:
+            host_segments = caller_host.strip().split(".")
+            if len(host_segments) == 4:
+                blur_segments = ["*", "*", "*", "*"]
+                for i in range(4):
+                    blur_segments[i] = host_segments[i]
+                    if (
+                        ".".join(blur_segments)
+                        in local_configs.SERVER.ALLOW_HOSTS
+                    ):
+                        return
+        raise ApiException(f"IP {caller_host} 不在访问白名单")

@@ -8,8 +8,11 @@ from starlette.middleware.base import (
     RequestResponseEndpoint,
 )
 from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from conf.config import local_configs
+
+# from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 
 
 async def add_process_time_header(
@@ -45,6 +48,12 @@ roster = [
             "allow_credentials": local_configs.SERVER.CORS.ALLOW_CREDENTIAL,
             "allow_methods": ["*"],
             "allow_headers": ["*"],
+        },
+    ],
+    [
+        TrustedHostMiddleware,
+        {
+            "allowed_hosts": local_configs.SERVER.ALLOW_HOSTS,
         },
     ],
     # [LoggingMiddleware, {}],

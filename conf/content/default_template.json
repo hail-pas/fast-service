@@ -1,81 +1,77 @@
 {
-  "RELATIONAL": {
-    "HOST": "localhost",
-    "PORT": 3306,
-    "USERNAME": "root",
-    "DB": "django-start-kit",
-    "PASSWORD": "pwd"
-  },
-  "REDIS": {
-    "HOST": "localhost",
-    "PORT": 6379,
-    "DB": 0,
-    "PASSWORD": "pwd"
-  },
-  "OSS": {
-    "ACCESS_KEY_ID": "",
-    "ACCESS_KEY_SECRET": "",
-    "ENDPOINT": "",
-    "BUCKET_NAME": "",
-    "BUCKET_ACL_TYPE": "private",
-    "EXPIRE_TIME": 300
+  "PROJECT": {
+    "UNIQUE_CODE": "FastService",  // 项目唯一标识，使用场景：redis前缀、监控标识
+    "NAME": "FastService",
+    "DESCRIPTION": "FastService Start Kit",
+    "VERSION": "v0.1",
+    "DEBUG": false,
+    "ENVIRONMENT": "Production", // Development, Test, Production
+    "LOG_DIR": "logs/",
+    "SKYWALKINGT_SERVER": null,
+    "SENTRY_DSN": null
   },
   "SERVER": {
     "HOST": "0.0.0.0",
     "PORT": 8000,
-    "ALLOW_HOSTS": [
-    ],
     "REQUEST_SCHEME": "https",
-    "TIMEZONE": "Asia/Shanghai",
     "CORS": {
       "ALLOW_ORIGIN": ["*"],
       "ALLOW_CREDENTIAL": true,
       "ALLOW_METHODS": ["*"],
       "ALLOW_HEADERS": ["*"]
     },
+    // "WORKERS_NUM": null,
+    "ALLOW_HOSTS": ["*"],
     "STATIC_PATH": "/static",
     "DOCS_URL": "/docs",
     "REDOC_URL": "/redoc"
   },
-  "PROJECT": {
-    "UNIQUE_CODE": "FastService",
-    "VERSION": "v0.1",
-    "DEBUG": false,
-    "ENVIRONMENT": "Production",
-    "NAME": "FastService",
-    "DESCRIPTION": "FastService Start Kit",
-    "LOG_DIR": "logs/"
+  "RELATIONAL": {
+    "HOST": "localhost",
+    "PORT": 3306,
+    "DB": "fast-service",
+    "USERNAME": "root",
+    "PASSWORD": "pwd",
+    "TIMEZONE":"Asia/Shanghai",
+    "TYPE": "mysql"
   },
-  "HBASE": {
-    "SERVERS": [
-      "192.168.3.75:9090"
-    ]
-  },
-  "KAFKA": {
-    "SERVERS": [
-    ]
+  "REDIS": {
+    "HOST": "localhost",
+    "PORT": 6379,
+    "DB": 0,
+    "PASSWORD": ""
   },
   "JWT": {
     "SECRET": "secret",
     "EXPIRATION_DELTA_MINUTES": 432000,
     "REFRESH_EXPIRATION_DELTA_DELTA_MINUTES": 4320
   },
-  "AES": {
-    "SECRET": "secret"
-  },
-  "Sign": {
-    "SECRET": "secret"
-  },
-  "K8S": {
-    "CONFIG_FILE": "file_path",
-    "HOST": "localhost",
-    "NAMESPACE": "DjangoStartKit",
-    "IMAGE": "DjangoStartKit",
-    "PVC_NAME": "pvc_name",
-    "CONFIG_MAP_NAME": "config_map_name"
-  },
-  "SENTRY_DSN": {
-    "DSN": ""
-  },
-  "THIRD_API_CONFIGS": null
+  "AES_SECRET": null,
+  "SIGN_SECRET": null
+  // "OSS": {
+  //   "ACCESS_KEY_ID": "",
+  //   "ACCESS_KEY_SECRET": "",
+  //   "ENDPOINT": "",
+  //   "BUCKET_NAME": "",
+  //   "BUCKET_ACL_TYPE": "private",
+  //   "EXPIRE_TIME": 300
+  // },
+  // "HBASE": {
+  //   "SERVERS": [
+  //     "192.168.3.75:9090"
+  //   ]
+  // },
+  // "KAFKA": {
+  //   "SERVERS": [
+  //   ]
+  // },
+  // "K8S": {
+  //   "CONFIG_FILE": "file_path",
+  //   "HOST": "localhost",
+  //   "NAMESPACE": "DjangoStartKit",
+  //   "IMAGE": "DjangoStartKit",
+  //   "PVC_NAME": "pvc_name",
+  //   "CONFIG_MAP_NAME": "config_map_name"
+  // },
+  // "THIRD_API_CONFIGS": null
 }
