@@ -108,13 +108,13 @@ def setup_sentry(current_settings: LocalConfig):
     import sentry_sdk
 
     sentry_sdk.init(
-        dsn=current_settings.SENTRY_DSN.DSN,
+        dsn=current_settings.PROJECT.SENTRY_DSN,
         environment=current_settings.PROJECT.ENVIRONMENT,
         integrations=[RedisIntegration()],
-        traces_sample_rate=1.0,
+        traces_sample_rate=0.2,
         _experiments={
-            "profiles_sample_rate": 1.0,
-        }
+            "profiles_sample_rate": 0.1,
+        },
     )
 
 
@@ -191,8 +191,8 @@ def create_app(current_settings: LocalConfig):
     # 初始化全局 error handling
     setup_exception_handlers(main_app)
     # 初始化 sentry
-    # if local_configs.SENTRY_DSN:
-    #     setup_sentry(current_settings)
+    if local_configs.PROJECT.SENTRY_DSN:
+        setup_sentry(current_settings)
 
     # openapi
 

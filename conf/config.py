@@ -135,6 +135,7 @@ class Project(BaseModel):
     DESCRIPTION: str = "FastAPI"
     BASE_DIR: Path = BASE_DIR
     SKYWALKINGT_SERVER: Optional[str] = None
+    SENTRY_DSN: Optional[str] = None
 
     @validator("ENVIRONMENT", allow_reuse=True)
     def check_if_environment_in(cls, v):  # noqa

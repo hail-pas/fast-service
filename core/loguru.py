@@ -8,6 +8,7 @@ from typing import cast
 from itertools import chain
 
 from loguru import logger
+from gunicorn import glogging
 
 from conf.config import BASE_DIR, EnvironmentEnum, local_configs
 from common.utils import datetime_now
@@ -165,8 +166,6 @@ def init_loguru():
     logging.getLogger("root").handlers.clear()
     logging.getLogger("uvicorn").handlers.clear()
 
-
-from gunicorn import glogging  # type: ignore
 
 class GunicornLogger(glogging.Logger):
     def __init__(self, cfg):
