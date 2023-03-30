@@ -1,4 +1,4 @@
-checkfiles = core/ apis/ common/ conf/ deploy/ storages/ thirdApis/ extensions/ scripts/ tests/ extensions/ startEntry/
+checkfiles = core/ apis/ common/ conf/ deploy/ storages/ third_apis/ extensions/ scripts/ tests/ extensions/ entrypoint/
 black_opts = -l 79 -t py39
 py_warn = PYTHONDEVMODE=1
 flake8config = .flake8

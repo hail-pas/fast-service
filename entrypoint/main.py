@@ -33,27 +33,28 @@ class FastApiApplication(gunicorn.app.base.BaseApplication):
 
 def post_fork(server, worker):
     # Important: The import of skywalking should be inside the post_fork function
-    if local_configs.PROJECT.SKYWALKINGT_SERVER:
-        print({"level": "INFO", "message": "Skywalking agent started"})
-        import os
+    # if local_configs.PROJECT.SKYWALKINGT_SERVER:
+    #     print({"level": "INFO", "message": "Skywalking agent started"})
+    #     import os
 
-        from skywalking import agent, config
+    #     from skywalking import agent, config
 
-        # append pid-suffix to instance name
-        # This must be done to distinguish instances if you give your instance customized names
-        # (highly recommended to identify workers)
-        # Notice the -child(pid) part is required to tell the difference of each worker.
-        agent_instance_name = f"python:fast-service-child({os.getpid()})"
+    #     # append pid-suffix to instance name
+    #     # This must be done to distinguish instances if you give your instance customized names
+    #     # (highly recommended to identify workers)
+    #     # Notice the -child(pid) part is required to tell the difference of each worker.
+    #     agent_instance_name = f"python:fast-service-child({os.getpid()})"
 
-        config.init(
-            agent_collector_backend_services="192.168.3.46:11800",
-            agent_name=f"python:{local_configs.PROJECT.NAME}",
-            agent_instance_name=agent_instance_name,
-            plugin_fastapi_collect_http_params=True,
-            agent_protocol="grpc",
-        )
+    #     config.init(
+    #         agent_collector_backend_services="192.168.3.46:11800",
+    #         agent_name=f"python:{local_configs.PROJECT.NAME}",
+    #         agent_instance_name=agent_instance_name,
+    #         plugin_fastapi_collect_http_params=True,
+    #         agent_protocol="grpc",
+    #     )
 
-        agent.start()
+    #     agent.start()
+    pass
 
 
 async def run_migrations():
@@ -91,8 +92,8 @@ if __name__ == "__main__":
         "graceful_timeout": 120,
         "timeout": 180,
         "logger_class": "core.loguru.GunicornLogger",
-        "config": "startEntry.gunicorn_conf.py",
-        "post_fork": "startEntry.main.post_fork",
+        # "config": "entrypoint.gunicorn_conf.py",
+        # "post_fork": "entrypoint.main.post_fork",
     }
     from core.factory import app
 

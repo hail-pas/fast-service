@@ -16,7 +16,7 @@ DIRS = [
     "core",
     "deploy",
     "extensions",
-    "startEntry",
+    "entrypoint",
     "tests",
 ]
 FILES = [

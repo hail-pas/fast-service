@@ -183,22 +183,13 @@ class K8s(HostAndPort):
 
 
 class ThirdApiConfig(HostAndPort):
-    protocol: Literal["https", "http", "rpc"] = "https"
-    timeout: int = 6
-    extras: Optional[dict]
-
-
-class UroraConfig(BaseModel):  # noqa
-    """
-    极光
-    """
-
-    app_key: str
-    master_secret: str
+    PROTOCOL: Literal["https", "http", "rpc"] = "https"
+    TIMEOUT: int = 6
+    EXTRAS: Optional[dict]
 
 
 class ThirdApiConfigs(BaseModel):
-    URORA: UroraConfig  # noqa
+    NACOS: ThirdApiConfig
 
 
 # class SentryDSN(BaseModel):

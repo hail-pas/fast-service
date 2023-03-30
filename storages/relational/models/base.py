@@ -25,6 +25,13 @@ class UUIDPrimaryKeyModel(Model):
         abstract = True
 
 
+class BigIntegerIDPrimaryKeyModel(Model):
+    id = fields.BigIntField(description="主键", pk=True)
+
+    class Meta:
+        abstract = True
+
+
 class TimeStampModel(Model):
     created_at = fields.DatetimeField(
         auto_now_add=True, description="创建时间", index=True
