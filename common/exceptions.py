@@ -1,5 +1,6 @@
 from typing import Optional
 
+from loguru import logger
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 from starlette.exceptions import HTTPException
@@ -8,6 +9,7 @@ from common.responses import AesResponse, ResponseCodeEnum
 
 
 async def unexpected_exception_handler(request, exc):
+    logger.error(f"Unexpected error: {exc}")
     return AesResponse(
         content={
             "code": ResponseCodeEnum.internal_error.value,
