@@ -152,10 +152,8 @@ def init_loguru():
         "uvicorn.error",
         "uvicorn.asgi",
         "uvicorn.access",
-        # "gunicorn.error",
-        # "gunicorn.asgi",
-        # "gunicorn.access"
         "fastapi",
+        "tortoise",
     )
 
     setup_loguru_logging_intercept(

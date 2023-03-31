@@ -18,10 +18,10 @@ class EnvironmentEnum(str, enum.Enum):
 
 
 ENVIRONMENT = os.environ.get(
-    "environment", EnvironmentEnum.development.value.lower()
+    "environment", EnvironmentEnum.development.value.capitalize()
 )
 
-CONFIG_FILE_PREFIX = str(BASE_DIR.absolute()) + f"/conf/content/{ENVIRONMENT}"
+CONFIG_FILE_PREFIX = str(BASE_DIR.absolute()) + f"/conf/content/{ENVIRONMENT.lower()}"
 
 CONFIG_FILE_EXTENSION = "json"
 
@@ -47,6 +47,9 @@ class Relational(HostAndPort):
 
     @property
     def tortoise_orm_config(self):
+        echo = (
+            True if ENVIRONMENT == EnvironmentEnum.development.value else False
+        )
         return {
             "connections": {
                 "default": {
@@ -57,7 +60,7 @@ class Relational(HostAndPort):
                         "user": self.USERNAME,
                         "password": self.PASSWORD,
                         "database": self.DB,
-                        # "echo": self.DEBUG,
+                        "echo": echo,
                         "maxsize": 20,
                     },
                 },
@@ -69,7 +72,7 @@ class Relational(HostAndPort):
                         "user": self.USERNAME,
                         "password": self.PASSWORD,
                         "database": self.DB,
-                        # "echo": self.DEBUG,
+                        "echo": echo,
                         "maxsize": 20,
                     },
                 },
