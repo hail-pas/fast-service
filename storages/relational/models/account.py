@@ -11,7 +11,6 @@ from storages.relational.models.base import BaseModel, UUIDPrimaryKeyModel
 class Account(BaseModel):
     username = fields.CharField(max_length=32, description="用户名", index=True)
     nickname = fields.CharField(max_length=48, description="昵称")
-    phone = fields.CharField(max_length=20, description="手机号", index=True)
     password = fields.CharField(max_length=128, description="密码")
     last_login_at = fields.DatetimeField(null=True, description="最近一次登录时间")
     remark = fields.CharField(max_length=256, default="", description="备注")
@@ -54,6 +53,7 @@ class Account(BaseModel):
     class Meta:
         table_description = "用户"
         ordering = ["-created_at"]
+        unique_together = (("username", "deleted_at"),)
 
     class PydanticMeta:
         computed = ("days_from_last_login", "status_display", "avatar_url")
@@ -92,7 +92,7 @@ class System(BaseModel):
 
 class Resource(BaseModel):
     parent = fields.ForeignKeyField(
-        "master.Resource", related_name="children", null=True
+        "master.Resource", related_name="children", null=True, description="父级"
     )
     code = fields.CharField(
         max_length=32, description="资源编码{parent}:{current}", index=True
@@ -104,13 +104,17 @@ class Resource(BaseModel):
     type = fields.CharField(
         max_length=16,
         enum_type=enums.SystemResourceTypeEnum,
-        description="组类型",
+        description="资源类型",
     )
-    order_num = fields.IntField(default=1, help_text="排列序号")
-    enabled = fields.BooleanField("启用状态", default=True, description="当前分组是否可用")
-    assignable = fields.BooleanField(
-        "是否可配置", default=True, description="配置时是否可分配"
+    rely_on = fields.ForeignKeyField(
+        "master.Resource",
+        related_name="relied_nodes",
+        null=True,
+        desscription="关联依赖",
     )
+    order_num = fields.IntField(default=1, description="排列序号")
+    enabled = fields.BooleanField(default=True, description="当前分组是否可用")
+    assignable = fields.BooleanField(default=True, description="配置时是否可分配")
     permissions: fields.ManyToManyRelation[
         Permission
     ] = fields.ManyToManyField("master.Permission", related_name="resources")
@@ -122,7 +126,7 @@ class Resource(BaseModel):
     roles: fields.ManyToManyRelation["Role"]
 
     class Meta:
-        table_description = "权限"
+        table_description = "系统资源"
         ordering = ["order_num"]
 
 

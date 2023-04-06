@@ -6,6 +6,7 @@ from jose import jwt
 from loguru import logger
 from fastapi import Query, Header, Depends
 from pydantic import PositiveInt
+from tortoise.models import Model
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.requests import Request
 from fastapi.security.utils import get_authorization_scheme_param
@@ -14,7 +15,7 @@ from conf.config import local_configs
 from common.types import JwtPayload
 from common.utils import flatten_list, get_client_ip
 from common.encrypt import Jwt, SignAuth
-from common.schemas import Pager
+from common.schemas import Pager, CURDPager
 from common.responses import ResponseCodeEnum
 from common.exceptions import ApiException
 from storages.relational.models.account import Account
@@ -54,11 +55,46 @@ class TheBearer(HTTPBearer):
 auth_schema = TheBearer()
 
 
-def get_pager(
+def pure_get_pager(
     page: PositiveInt = Query(default=1, example=1, description="第几页"),
     size: PositiveInt = Query(default=10, example=10, description="每页数量"),
 ):
     return Pager(limit=size, offset=(page - 1) * size)
+
+
+def paginate(
+    model: Model, search_fields: Optional[set], max_limit: Optional[int]
+):
+    def get_pager(
+        page: PositiveInt = Query(default=1, example=1, description="第几页"),
+        size: PositiveInt = Query(default=10, example=10, description="每页数量"),
+        order_by: str = Query(
+            default="",
+            example="-id",
+            description=f"排序字段, 多个字段用逗号分隔. 可选字段: {', '.join(model._meta.db_fields)}",
+        ),
+        search: str = Query(
+            None, description=f"搜索关键字, 匹配字段: {', '.join(search_fields)}"
+        ),
+    ):
+        if max_limit:
+            size = min(size, max_limit)
+        order_by = order_by.split(",")
+        for field in order_by:
+            if field.startswith("-"):
+                field = field[1:]
+            if field not in model._meta.db_fields:
+                raise ApiException(
+                    f"排序字段 {field} 不存在",
+                )
+        return CURDPager(
+            limit=size,
+            offset=(page - 1) * size,
+            order_by=order_by,
+            search=search,
+        )
+
+    return get_pager
 
 
 async def jwt_required(

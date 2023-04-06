@@ -1,9 +1,12 @@
 import uuid
-from typing import List
+from typing import List, Optional
+from dataclasses import dataclass
 
+from fastapi import Query
 from pydantic import Field
 from tortoise.contrib.pydantic import pydantic_model_creator
 
+from common.pydantic import optional
 from storages.relational.models.account import (
     Role,
     System,
@@ -72,9 +75,37 @@ PermissionCreate = pydantic_model_creator(
 SystemResourceDetail = pydantic_model_creator(
     Resource, name="SystemResourceDetail"
 )
-SystemResourceCreate = pydantic_model_creator(
-    Resource,
-    name="SystemResourceCreate",
-    exclude=["deleted_at"],
-    exclude_readonly=True,
-)
+
+
+class SystemResourceCreate(
+    pydantic_model_creator(
+        Resource,
+        name="SystemResourceCreate",
+        exclude=["deleted_at"],
+        exclude_readonly=True,
+    )
+):
+    parent: Optional[str] = Field(None, description="父级资源id")
+    rely_on: Optional[str] = Field(None, description="依赖资源id")
+    permissions: List[uuid.UUID] = Field(None, description="权限id列表")
+
+
+@optional
+class SystemResourceUpdate(SystemResourceCreate):
+    ...
+
+
+@dataclass
+class SystemResourceFilterSchema:
+    code: str = Query(None, description="资源名称")
+    label: str = Query(None, description="系统id")
+    parent: str = Query(None, description="父级资源id")
+    rely_on: str = Query(None, description="依赖资源id")
+
+    def __post_init__(self, *args, **kwargs):
+        # validate or add custom field
+        self.extra_args = []
+        self.extra_kwargs = {}
+
+    # def __post_init_post_parse__(self):
+    #     pass

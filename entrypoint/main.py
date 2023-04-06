@@ -2,12 +2,12 @@ import sys
 
 sys.path.append(".")  # 将当前目录加入到环境变量中
 
-import asyncio
+import asyncio  # noqa
 
-import gunicorn.app.base
-from aerich import Command
+import gunicorn.app.base  # noqa
+from aerich import Command  # noqa
 
-from conf.config import local_configs
+from conf.config import local_configs  # noqa
 
 """FastAPI"""
 

@@ -1,13 +1,13 @@
-from pydantic import PositiveInt, conint
-from fastapi_pagination.default import Params, RawParams
+from typing import List, Optional
+
+from pydantic import BaseModel, PositiveInt, conint
 
 
-class Pager(Params):
+class Pager(BaseModel):
     limit: PositiveInt = 10
     offset: conint(ge=0) = 0
 
-    def to_raw_params(self) -> RawParams:
-        return RawParams(
-            limit=self.limit,
-            offset=self.offset,
-        )
+
+class CURDPager(Pager):
+    order_by: List = []
+    search: Optional[str] = None

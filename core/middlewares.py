@@ -26,15 +26,15 @@ async def add_process_time_header(
     return response
 
 
-class LoggingMiddleware(BaseHTTPMiddleware):
+class LoggingReqRespMiddleware(BaseHTTPMiddleware):
     """logging middleware."""
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        logger.info()  # 请求内容
+        # logger.info()  # 请求内容
         response = await call_next(request)
-        logger.info(response)
+        # logger.info(response)
         return response  # 响应内容
 
 
@@ -66,5 +66,5 @@ roster = [
             "allowed_hosts": local_configs.SERVER.ALLOW_HOSTS,
         },
     ],
-    # [LoggingMiddleware, {}],
+    # [LoggingReqRespMiddleware, {}],
 ]

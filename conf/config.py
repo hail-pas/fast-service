@@ -21,7 +21,9 @@ ENVIRONMENT = os.environ.get(
     "environment", EnvironmentEnum.development.value.capitalize()
 )
 
-CONFIG_FILE_PREFIX = str(BASE_DIR.absolute()) + f"/conf/content/{ENVIRONMENT.lower()}"
+CONFIG_FILE_PREFIX = (
+    str(BASE_DIR.absolute()) + f"/conf/content/{ENVIRONMENT.lower()}"
+)
 
 CONFIG_FILE_EXTENSION = "json"
 

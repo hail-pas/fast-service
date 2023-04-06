@@ -3,6 +3,7 @@ from typing import (
     Dict,
     List,
     Type,
+    Tuple,
     Union,
     Generic,
     TypeVar,
@@ -10,15 +11,20 @@ from typing import (
     Optional,
     Sequence,
 )
+from collections import defaultdict
+from dataclasses import asdict, dataclass
 
 from fastapi import Depends, APIRouter, HTTPException
 from pydantic import BaseModel, create_model
 from fastapi.types import DecoratedCallable
 from tortoise.models import Model
+from tortoise.expressions import Q
+from tortoise.transactions import atomic
 
-from common.schemas import Pager
+from common.schemas import CURDPager
 from common.responses import Resp, PageResp, generate_page_info
-from apis.dependencies import get_pager
+from apis.dependencies import paginate
+from common.exceptions import ApiException
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -44,15 +50,65 @@ def schema_factory(
 PAGINATION = Dict[str, Optional[int]]
 
 
-def pagination_factory(max_limit: Optional[int] = None) -> Pager:
+def pagination_factory(
+    db_model: Model, search_fields, max_limit: Optional[int] = None
+) -> CURDPager:
     """
     Created the pagination dependency to be used in the router
     """
 
-    return Depends(get_pager)
+    return Depends(paginate(db_model, search_fields, max_limit))
 
 
 DEPENDENCIES = Optional[Sequence[Depends]]
+
+
+async def update_create_data_clean(
+    data: dict, model: Model
+) -> Tuple[dict, dict]:
+    fields_map = model._meta.fields_map
+    fk_fields = model._meta.fk_fields
+    m2m_fields = model._meta.m2m_fields
+
+    cleaned_data = {}
+    m2m_fields_data = defaultdict(list)
+
+    for key in data.keys():
+        if key not in fields_map:
+            continue
+        if key in fk_fields and data[key]:
+            field = fields_map[key]
+            obj = await field.related_model.get_or_none(
+                **{field.to_field: data[key]}
+            )
+            if not obj:
+                raise ApiException(f"{field.description}不存在")
+            cleaned_data[key] = obj
+            continue
+
+        if key in m2m_fields and data[key]:
+            field = fields_map[key]
+            model = field.related_model
+            for related_id in data[key]:
+                obj = await model.get_or_none(id=related_id)
+                if not obj:
+                    raise ApiException(
+                        f"id为{related_id}的{model._meta.table_description}不存在"
+                    )
+                m2m_fields_data[key].append(obj)
+            continue
+
+        cleaned_data[key] = data[key]
+
+    return cleaned_data, m2m_fields_data
+
+
+def default_filter():
+    @dataclass
+    class DefaultFilterSchema:
+        pass
+
+    return DefaultFilterSchema
 
 
 class CURDGenerator(Generic[T], APIRouter):
@@ -68,9 +124,11 @@ class CURDGenerator(Generic[T], APIRouter):
         create_schema: Optional[Type[T]] = None,
         update_schema: Optional[Type[T]] = None,
         retrieve_schema: Optional[Type[T]] = None,
+        filter_schema: Optional[Type[T]] = None,
+        search_fields: Optional[List[str]] = None,
         prefix: Optional[str] = None,
         tags: Optional[List[str]] = None,
-        paginate: Optional[int] = None,
+        max_paginate_limit: Optional[int] = None,
         get_all_route: Union[bool, DEPENDENCIES] = True,
         get_one_route: Union[bool, DEPENDENCIES] = True,
         create_route: Union[bool, DEPENDENCIES] = True,
@@ -84,7 +142,11 @@ class CURDGenerator(Generic[T], APIRouter):
         self._pk: str = db_model.describe()["pk_field"]["db_column"]
 
         self.schema = schema
-        self.pagination: Pager = pagination_factory(max_limit=paginate)
+        self.pagination: CURDPager = pagination_factory(
+            db_model,
+            search_fields=set(search_fields or []),
+            max_limit=max_paginate_limit,
+        )
         self._pk: str = self._pk if hasattr(self, "_pk") else "id"
         self.create_schema = (
             create_schema
@@ -103,6 +165,8 @@ class CURDGenerator(Generic[T], APIRouter):
         self.retrieve_schema = (
             retrieve_schema if retrieve_schema else self.schema
         )
+        self.filter_schema = filter_schema or default_filter()
+        self.search_fields = set(search_fields or [])
 
         prefix = str(prefix if prefix else self.schema.__name__).lower()
         prefix = self._base_path + prefix.strip("/")
@@ -125,7 +189,7 @@ class CURDGenerator(Generic[T], APIRouter):
                 "",
                 self._create(),
                 methods=["POST"],
-                response_model=Resp[self.schema],
+                response_model=Resp[self.retrieve_schema],
                 summary=f"创建{self.db_model_label}",
                 dependencies=create_route,
             )
@@ -239,21 +303,55 @@ class CURDGenerator(Generic[T], APIRouter):
                 self.routes.remove(route)
 
     def _get_all(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route(pagination: Pager = self.pagination):
-            query = await self.schema.from_queryset(
-                self.db_model.all()
-                .offset(pagination.offset)
-                .limit(pagination.limit)
+        async def route(
+            # request: Request,
+            filter_: self.filter_schema = Depends(),
+            pagination: CURDPager = self.pagination,
+        ):
+            exclude_fields = getattr(filter_, "exclude_fields", [])
+
+            extra_args = getattr(filter_, "extra_args", [])
+            extra_kwargs = getattr(filter_, "extra_kwargs", {})
+
+            filter_dict = asdict(
+                filter_,
+                dict_factory=lambda x: {
+                    k: v
+                    for (k, v) in x
+                    if v is not None and k not in exclude_fields
+                },
             )
-            total = await self.db_model.all().count()
+
+            filter_dict.update(extra_kwargs)
+
+            queryset = (
+                self.db_model.filter(*extra_args)
+                .filter(**filter_dict)
+                .order_by(*pagination.order_by)
+            )
+
+            search = getattr(filter_, "search", None)
+            if search and self.search_fields:
+                sub_q_exps = []
+                for search_field in self.search_fields:
+                    sub_q_exps.append(
+                        Q(**{f"{search_field}__icontains": search})
+                    )
+                q_expression = Q(*sub_q_exps, join_type=Q.OR)
+                queryset = queryset.filter(q_expression)
+
+            data = await self.schema.from_queryset(
+                queryset.offset(pagination.offset).limit(pagination.limit)
+            )
+            total = await queryset.count()
             return PageResp[self.schema](
-                data=query, page_info=generate_page_info(total, pagination)
+                data=data, page_info=generate_page_info(total, pagination)
             )
 
         return route
 
     def _get_one(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route(id: str) -> Model:
+        async def route(id: str):
             model = self.db_model.get_or_none(id=id)
 
             if model:
@@ -266,36 +364,52 @@ class CURDGenerator(Generic[T], APIRouter):
         return route
 
     def _create(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route(model: self.create_schema) -> Model:  # type: ignore
-            db_model = self.db_model(**model.dict())
-            await db_model.save()
+        @atomic("default")
+        async def route(model: self.create_schema):  # type: ignore
+            data, m2m_data = await update_create_data_clean(
+                model.dict(), self.db_model
+            )
+
+            obj = self.db_model(**data)
+            await obj.save()
+
+            for k, v in m2m_data.items():
+                await getattr(obj, k).add(*v)
 
             return Resp[self.retrieve_schema](
-                data=await self.retrieve_schema.from_tortoise_orm(db_model)
+                data=await self.retrieve_schema.from_tortoise_orm(obj)
             )
 
         return route
 
     def _update(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route(
-            id: str, model: self.update_schema  # type: ignore
-        ) -> Model:
-            await self.db_model.filter(id=id).update(
-                **model.dict(exclude_unset=True)
+        @atomic("default")
+        async def route(id: str, model: self.update_schema):  # type: ignore
+            obj = await self.db_model.get_or_none(id=id)
+            if not obj:
+                return Resp.fail("对象不存在")
+            data, m2m_data = await update_create_data_clean(
+                model.dict(exclude_unset=True), self.db_model
             )
-            return Resp[self.retrieve_schema](data=await self._get_one()(id))
+            if data:
+                await self.db_model.filter(id=id).update(**data)
+            if m2m_data:
+                for k, v in m2m_data.items():
+                    await getattr(obj, k).add(*v)
+            await obj.refresh_from_db()
+            return Resp[self.retrieve_schema](data=obj)
 
         return route
 
     def _delete_one(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route(id: str) -> Model:
+        async def route(id: str):
             await self.db_model.filter(id=id).delete()
             return Resp()
 
         return route
 
     def _delete_all(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route() -> List[Model]:
+        async def route():
             await self.db_model.all().delete()
             return Resp()
 

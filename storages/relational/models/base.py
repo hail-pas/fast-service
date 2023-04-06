@@ -6,7 +6,7 @@ from tortoise.models import Model
 from tortoise.expressions import Q
 from tortoise.backends.base.client import BaseDBAsyncClient
 
-from common.schemas import Pager
+from common.schemas import CURDPager
 from common.responses import generate_page_info
 
 # from tortoise.contrib.pydantic.creator import pydantic_model_creator, PydanticMeta
@@ -63,7 +63,7 @@ class BaseModel(UUIDPrimaryKeyModel, TimeStampModel):
     @classmethod
     async def page_data(
         cls,
-        pager: Pager,
+        pager: CURDPager,
         *args: Q,
         **kwargs: Any,
     ):

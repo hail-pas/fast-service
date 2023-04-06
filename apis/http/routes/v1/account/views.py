@@ -24,6 +24,8 @@ from apis.http.routes.v1.account.pydntic_model import (
     PermissionDetail,
     SystemResourceCreate,
     SystemResourceDetail,
+    SystemResourceUpdate,
+    SystemResourceFilterSchema,
 )
 
 router = APIRouter(dependencies=[Depends(account_permission_check)])
@@ -100,7 +102,12 @@ router.include_router(
         db_model=Resource,
         prefix="resource/",
         create_schema=SystemResourceCreate,
-        update_schema=SystemResourceCreate,
+        update_schema=SystemResourceUpdate,
+        filter_schema=SystemResourceFilterSchema,
+        search_fields=[
+            "code",
+            "label",
+        ],
         tags=["资源管理"],
     )
 )

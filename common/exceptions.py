@@ -1,5 +1,6 @@
 from typing import Optional
 
+import ujson
 from loguru import logger
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
@@ -42,19 +43,24 @@ error_msg_template = {
 async def validation_exception_handler(request, exc):
     """参数校验错误"""
     try:
-        errors = exc.raw_errors[0].exc
-        model = errors.model
-        errors = errors.errors()
-        fields: dict = model.Config.fields
-        field = errors[0]["loc"][0]
-        if field in fields:
-            field = fields[field].get("description") or field
-        error_type = errors[0]["type"]
-        ctx = errors[0].get("ctx") or {}
+        error = ujson.loads(exc.json())[0]
+        field = error["loc"][0]
+        error_type = error["type"]
+        ctx = error["ctx"]
+        # error['loc'][-1], error['msg']
+        # errors = exc.raw_errors[0].exc
+        # model = errors.model
+        # errors = errors.errors()
+        # fields: dict = model.Config.fields
+        # field = errors[0]["loc"][0]
+        # if field in fields:
+        #     field = fields[field].get("description") or field
+        # error_type = errors[0]["type"]
+        # ctx = errors[0].get("ctx") or {}
         msg = (
             error_msg_template[error_type].format(**ctx)
             if error_type in error_msg_template
-            else errors[0]["msg"]
+            else error["msg"]
         )
     except AttributeError:
         errors = exc.errors()

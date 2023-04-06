@@ -1,4 +1,3 @@
-import logging
 from enum import unique
 from math import ceil
 from typing import Any, List, Generic, TypeVar, Optional, Sequence
@@ -12,8 +11,6 @@ from common.types import IntEnumMore
 from common.utils import DATETIME_FORMAT_STRING, datetime_now
 from common.schemas import Pager
 from common.pydantic import DateTimeFormatConfig
-
-logger = logging.getLogger(__name__)
 
 
 @unique
