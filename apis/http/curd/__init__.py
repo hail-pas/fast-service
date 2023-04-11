@@ -14,10 +14,12 @@ from typing import (
 from collections import defaultdict
 from dataclasses import asdict, dataclass
 
-from fastapi import Depends, APIRouter, HTTPException
+from fastapi import Body, Depends, Request, APIRouter, HTTPException
 from pydantic import BaseModel, create_model
 from fastapi.types import DecoratedCallable
 from tortoise.models import Model
+from tortoise.queryset import QuerySet
+from tortoise.exceptions import IntegrityError
 from tortoise.expressions import Q
 from tortoise.transactions import atomic
 
@@ -67,7 +69,7 @@ async def update_create_data_clean(
     data: dict, model: Model
 ) -> Tuple[dict, dict]:
     fields_map = model._meta.fields_map
-    fk_fields = model._meta.fk_fields
+    fk_fields = [f"{i}_id" for i in model._meta.fk_fields]
     m2m_fields = model._meta.m2m_fields
 
     cleaned_data = {}
@@ -76,17 +78,20 @@ async def update_create_data_clean(
     for key in data.keys():
         if key not in fields_map:
             continue
-        if key in fk_fields and data[key]:
-            field = fields_map[key]
-            obj = await field.related_model.get_or_none(
-                **{field.to_field: data[key]}
-            )
-            if not obj:
-                raise ApiException(f"{field.description}不存在")
-            cleaned_data[key] = obj
+        if key in fk_fields:
+            if data[key]:
+                field = fields_map[key.split("_id")[0]]
+                obj = await field.related_model.get_or_none(
+                    **{field.to_field: data[key]}
+                )
+                if not obj:
+                    raise ApiException(f"{field.description}不存在")
+            cleaned_data[key] = data[key]
             continue
 
-        if key in m2m_fields and data[key]:
+        if key in m2m_fields:
+            if not data[key]:
+                continue
             field = fields_map[key]
             model = field.related_model
             for related_id in data[key]:
@@ -111,16 +116,29 @@ def default_filter():
     return DefaultFilterSchema
 
 
+async def default_get_queryset(
+    self: "CURDGenerator", request: Request
+) -> QuerySet:
+    return self.queryset or self.db_model.all()
+
+
 class CURDGenerator(Generic[T], APIRouter):
+    db_model: Type[Model]
+    queryset: Optional[QuerySet]
     schema: Type[T]
     create_schema: Type[T]
     update_schema: Type[T]
+    filter_schema: Type[T]
+    retrieve_schema: Type[T]
     _base_path: str = "/"
+    get_queryset: Callable[["CURDGenerator", Request], QuerySet]
 
     def __init__(
         self,
         schema: Type[T],
         db_model: Type[Model],
+        queryset: Optional[QuerySet] = None,
+        get_queryset: Callable[["CURDGenerator", Request], QuerySet] = None,
         create_schema: Optional[Type[T]] = None,
         update_schema: Optional[Type[T]] = None,
         retrieve_schema: Optional[Type[T]] = None,
@@ -138,6 +156,8 @@ class CURDGenerator(Generic[T], APIRouter):
         **kwargs: Any,
     ) -> None:
         self.db_model = db_model
+        self.queryset = queryset
+        self.get_queryset = get_queryset or default_get_queryset
         self.db_model_label = self.db_model.Meta.table_description
         self._pk: str = db_model.describe()["pk_field"]["db_column"]
 
@@ -197,10 +217,10 @@ class CURDGenerator(Generic[T], APIRouter):
         if delete_all_route:
             self._add_api_route(
                 "",
-                self._delete_all(),
+                self._batch_delete(),
                 methods=["DELETE"],
                 response_model=Resp,  # type: ignore
-                summary=f"删除全部{self.db_model_label}",
+                summary=f"批量删除{self.db_model_label}",
                 dependencies=delete_all_route,
             )
 
@@ -230,7 +250,7 @@ class CURDGenerator(Generic[T], APIRouter):
                 self._delete_one(),
                 methods=["DELETE"],
                 response_model=Resp,
-                summary=f"删除{self.db_model_label}",
+                summary=f"单个删除{self.db_model_label}",
                 dependencies=delete_one_route,
             )
 
@@ -304,7 +324,7 @@ class CURDGenerator(Generic[T], APIRouter):
 
     def _get_all(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
         async def route(
-            # request: Request,
+            request: Request,
             filter_: self.filter_schema = Depends(),
             pagination: CURDPager = self.pagination,
         ):
@@ -324,14 +344,18 @@ class CURDGenerator(Generic[T], APIRouter):
 
             filter_dict.update(extra_kwargs)
 
+            queryset: QuerySet[self.db_model] = await self.get_queryset(
+                self, request
+            )
+
             queryset = (
-                self.db_model.filter(*extra_args)
+                queryset.filter(*extra_args)
                 .filter(**filter_dict)
                 .order_by(*pagination.order_by)
             )
 
-            search = getattr(filter_, "search", None)
-            if search and self.search_fields:
+            search = pagination.search
+            if search is not None and self.search_fields:
                 sub_q_exps = []
                 for search_field in self.search_fields:
                     sub_q_exps.append(
@@ -351,12 +375,17 @@ class CURDGenerator(Generic[T], APIRouter):
         return route
 
     def _get_one(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route(id: str):
-            model = self.db_model.get_or_none(id=id)
+        async def route(
+            request: Request,
+            id: str,
+        ):
+            model = await (await self.get_queryset(self, request)).get_or_none(
+                id=id
+            )
 
             if model:
                 return Resp[self.retrieve_schema](
-                    data=await self.retrieve_schema.from_queryset_single(model)
+                    data=await self.retrieve_schema.from_tortoise_orm(model)
                 )
             else:
                 return Resp.fail("对象不存在")
@@ -365,16 +394,24 @@ class CURDGenerator(Generic[T], APIRouter):
 
     def _create(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
         @atomic("default")
-        async def route(model: self.create_schema):  # type: ignore
+        async def route(
+            request: Request, model: self.create_schema
+        ):  # type: ignore
             data, m2m_data = await update_create_data_clean(
                 model.dict(), self.db_model
             )
 
             obj = self.db_model(**data)
-            await obj.save()
+            try:
+                await obj.save()
+            except IntegrityError:
+                raise ApiException(
+                    f"{self.db_model._meta.table_description}已存在"
+                )
 
             for k, v in m2m_data.items():
-                await getattr(obj, k).add(*v)
+                if v:
+                    await getattr(obj, k).add(*v)
 
             return Resp[self.retrieve_schema](
                 data=await self.retrieve_schema.from_tortoise_orm(obj)
@@ -384,15 +421,26 @@ class CURDGenerator(Generic[T], APIRouter):
 
     def _update(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
         @atomic("default")
-        async def route(id: str, model: self.update_schema):  # type: ignore
-            obj = await self.db_model.get_or_none(id=id)
+        async def route(
+            request: Request, id: str, model: self.update_schema
+        ):  # type: ignore
+            obj = await (await self.get_queryset(self, request)).get_or_none(
+                id=id
+            )
             if not obj:
                 return Resp.fail("对象不存在")
             data, m2m_data = await update_create_data_clean(
                 model.dict(exclude_unset=True), self.db_model
             )
             if data:
-                await self.db_model.filter(id=id).update(**data)
+                try:
+                    await (await self.get_queryset(self, request)).filter(
+                        id=id
+                    ).update(**data)
+                except IntegrityError:
+                    raise ApiException(
+                        f"{self.db_model._meta.table_description}已存在"
+                    )
             if m2m_data:
                 for k, v in m2m_data.items():
                     await getattr(obj, k).add(*v)
@@ -402,15 +450,21 @@ class CURDGenerator(Generic[T], APIRouter):
         return route
 
     def _delete_one(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route(id: str):
-            await self.db_model.filter(id=id).delete()
+        async def route(request: Request, id: str):
+            await (await self.get_queryset(self, request)).filter(
+                id=id
+            ).delete()
             return Resp()
 
         return route
 
-    def _delete_all(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route():
-            await self.db_model.all().delete()
+    def _batch_delete(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
+        async def route(
+            request: Request, ids: List[str] = Body(..., description="id列表")
+        ):
+            await (await self.get_queryset(self, request)).filter(
+                id__in=ids
+            ).delete()
             return Resp()
 
         return route

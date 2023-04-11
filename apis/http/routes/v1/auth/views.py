@@ -12,10 +12,13 @@ from common.utils import datetime_now
 from common.encrypt import Jwt, PasswordUtil
 from common.responses import Resp, SimpleSuccess
 from apis.dependencies import jwt_required
-from storages.relational.models.account import Role, Account
-from apis.http.routes.v1.account.pydntic_model import (
+from storages.relational.curd.resource import get_resource_tree
+from storages.relational.models.account import Role, System, Account
+from storages.relational.pydantic.system import SystemList
+from storages.relational.pydantic.account import (
     AccountCreate,
     AccountDetail,
+    AccountDetailWithResource,
 )
 
 router = APIRouter()
@@ -39,7 +42,7 @@ class AuthData(BaseModel):
     token_type: str
     access_token: str
     expired_at: datetime
-    account: AccountDetail
+    account: AccountDetailWithResource
 
     class Config:
         orm_mode = True
@@ -54,9 +57,11 @@ class AuthData(BaseModel):
     "/login", summary="登录", description="登录接口", response_model=Resp[AuthData]
 )
 async def login(login_data: LoginSchema):
-    account: Optional[Account] = await Account.filter(
-        username=login_data.username
-    ).first()
+    account: Optional[Account] = (
+        await Account.filter(username=login_data.username)
+        .prefetch_related("roles")
+        .first()
+    )
     if not account:
         return Resp.fail(message="用户不存在")
     if not PasswordUtil.verify_password(login_data.password, account.password):
@@ -73,8 +78,15 @@ async def login(login_data: LoginSchema):
             json.loads(payload.json())
         ),
         "expired_at": expired_at,
-        "account": await AccountDetail.from_tortoise_orm(account),
+        "account": await AccountDetailWithResource.from_tortoise_orm(account),
     }
+
+    data["account"].resources = await get_resource_tree(
+        system=await System.get(code="burnish"), role=account.roles[0]
+    )
+    data["account"].systems = await SystemList.from_queryset(
+        System.filter(roles__in=await account.roles.all())
+    )
     return Resp[AuthData](data=AuthData(**data))
 
 
@@ -130,14 +142,9 @@ async def register(register_in: AccountCreate) -> Resp[AccountDetail]:
             return Resp.fail("角色不存在")
         roles.append(role)
     try:
-        data["password"] = PasswordUtil.get_password_hash(data["password"])
         account = await Account.create(**data)
         await account.roles.add(*roles)
     except IntegrityError:
         return Resp.fail("用户已存在")
     data = await AccountDetail.from_tortoise_orm(account)
-    """
-    1. cls._meta.fields_map.keys() 没有 roles 导致要获取reverserelation 字段需要显示指定;
-       不确定是不是tortoise orm 的bug
-    """
     return Resp[AccountDetail](data=data)

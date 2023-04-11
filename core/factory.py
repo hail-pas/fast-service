@@ -194,8 +194,6 @@ def create_app(current_settings: LocalConfig):
     if local_configs.PROJECT.SENTRY_DSN:
         setup_sentry(current_settings)
 
-    # openapi
-
     return main_app
 
 

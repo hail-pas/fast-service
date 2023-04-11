@@ -79,7 +79,7 @@ def paginate(
     ):
         if max_limit:
             size = min(size, max_limit)
-        order_by = order_by.split(",")
+        order_by = list(filter(lambda x: x, order_by.split(",")))
         for field in order_by:
             if field.startswith("-"):
                 field = field[1:]

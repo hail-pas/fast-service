@@ -57,7 +57,6 @@ class Account(BaseModel):
 
     class PydanticMeta:
         computed = ("days_from_last_login", "status_display", "avatar_url")
-        max_recursion = 1
 
 
 class Permission(UUIDPrimaryKeyModel):
@@ -125,9 +124,12 @@ class Resource(BaseModel):
     # reversed relations
     roles: fields.ManyToManyRelation["Role"]
 
+    children: fields.ReverseRelation["Resource"]
+
     class Meta:
         table_description = "系统资源"
         ordering = ["order_num"]
+        unique_together = (("code", "parent"),)
 
 
 class Role(BaseModel):
