@@ -1,5 +1,4 @@
 import time
-import uuid
 
 from loguru import logger
 from fastapi import Response
@@ -12,6 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from conf.config import local_configs
+from common.utils import get_or_set_request_id
 
 # from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 
@@ -39,7 +39,7 @@ class LoggingReqRespMiddleware(BaseHTTPMiddleware):
 
 
 async def request_id_middleware(request, call_next):
-    request_id = str(uuid.uuid4())
+    request_id = get_or_set_request_id()
     with logger.contextualize(request_id=request_id):
         response = await call_next(request)
         response.headers["X-Request-ID"] = request_id

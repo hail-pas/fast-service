@@ -1,6 +1,7 @@
 import enum
 import uuid
 from datetime import datetime
+from contextvars import ContextVar
 
 from pydantic import BaseModel
 
@@ -141,3 +142,10 @@ class Map(dict):
 class JwtPayload(BaseModel):
     account_id: uuid.UUID
     expired_at: datetime
+
+
+REQUEST_ID_CTX_KEY = "request_id"
+
+request_id_ctx_var: ContextVar[str] = ContextVar(
+    REQUEST_ID_CTX_KEY, default=None
+)

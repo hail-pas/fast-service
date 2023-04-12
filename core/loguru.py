@@ -11,7 +11,7 @@ from loguru import logger
 from gunicorn import glogging
 
 from conf.config import BASE_DIR, EnvironmentEnum, local_configs
-from common.utils import datetime_now
+from common.utils import datetime_now, get_or_set_request_id
 
 LOG_LEVEL = logging.DEBUG if local_configs.PROJECT.DEBUG else logging.INFO
 
@@ -52,7 +52,9 @@ class InterceptHandler(logging.Handler):
         while frame.f_code.co_filename == logging.__file__:  # noqa: WPS609
             frame = cast(FrameType, frame.f_back)
             depth += 1
-        logger.opt(depth=depth, exception=record.exc_info).log(
+        logger.bind(request_id=get_or_set_request_id()).opt(
+            depth=depth, exception=record.exc_info
+        ).log(
             level,
             record.getMessage(),
         )

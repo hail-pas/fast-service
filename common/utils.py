@@ -1,5 +1,6 @@
 import re
 import time
+import uuid
 import random
 import string
 from typing import Any, Dict, List, Union, Callable, Hashable
@@ -9,6 +10,7 @@ from zoneinfo import ZoneInfo
 from starlette.requests import Request
 
 from conf.config import local_configs
+from common.types import request_id_ctx_var
 
 DATETIME_FORMAT_STRING = "%Y-%m-%d %H:%M:%S"
 DATE_FORMAT_STRING = "%Y-%m-%d"
@@ -257,3 +259,11 @@ def camel2snake(camel: str) -> str:
         r"([a-z0-9])([A-Z])", lambda m: f"{m.group(1)}_{m.group(2)}", snake
     )
     return snake.lower()
+
+
+def get_or_set_request_id():
+    request_id = request_id_ctx_var.get()
+    if not request_id:
+        request_id = str(uuid.uuid4())
+        request_id_ctx_var.set(request_id)
+    return request_id
