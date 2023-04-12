@@ -267,3 +267,11 @@ def get_or_set_request_id():
         request_id = str(uuid.uuid4())
         request_id_ctx_var.set(request_id)
     return request_id
+
+
+def get_request_id():
+    return request_id_ctx_var.get()
+
+
+def reset_request_id():
+    request_id_ctx_var.set(None)
