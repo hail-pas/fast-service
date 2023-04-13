@@ -4,6 +4,7 @@ from typing import List, Optional
 from fastapi import Query, Depends, APIRouter
 
 from apis.http.curd import CURDGenerator
+from common.fastapi import RespSchemaAPIRouter
 from common.responses import Resp
 from apis.dependencies import account_permission_check
 from storages.relational.curd.resource import get_resource_tree
@@ -50,7 +51,10 @@ from storages.relational.pydantic.permission import (
     PermissionUpdate,
 )
 
-router = APIRouter(dependencies=[Depends(account_permission_check)])
+router = APIRouter(
+    dependencies=[Depends(account_permission_check)],
+    route_class=RespSchemaAPIRouter,
+)
 
 router.include_router(
     CURDGenerator(

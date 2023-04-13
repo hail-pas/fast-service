@@ -7,11 +7,14 @@ from fastapi import Request, APIRouter
 from pydantic import BaseModel
 
 from conf.config import local_configs
+from common.fastapi import RespSchemaAPIRouter
 from common.responses import Resp
 from apis.http.routes.v1 import v1_routes
 
-http_app = APIRouter()
+http_app = APIRouter(route_class=RespSchemaAPIRouter)
 
+# mount apis
+# v1
 http_app.include_router(v1_routes)
 
 

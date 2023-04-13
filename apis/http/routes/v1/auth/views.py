@@ -2,14 +2,16 @@ import json
 from typing import Optional
 from datetime import datetime, timedelta
 
-from fastapi import Body, Depends, APIRouter
+from fastapi import Depends, APIRouter
 from pydantic import BaseModel
 from tortoise.exceptions import IntegrityError
+from tortoise.contrib.pydantic import pydantic_model_creator
 
 from conf.config import local_configs
 from common.types import JwtPayload
 from common.utils import datetime_now
 from common.encrypt import Jwt, PasswordUtil
+from common.fastapi import RespSchemaAPIRouter
 from common.responses import Resp, SimpleSuccess
 from apis.dependencies import jwt_required
 from storages.relational.curd.resource import get_resource_tree
@@ -21,17 +23,18 @@ from storages.relational.pydantic.account import (
     AccountDetailWithResource,
 )
 
-router = APIRouter()
+router = APIRouter(route_class=RespSchemaAPIRouter)
 
 """
 1. request_schema
 """
 
-
-class LoginSchema(BaseModel):
-    username: str = Body(..., description="用户名", example="phoenix")
-    password: str = Body(..., description="密码")
-
+LoginSchema = pydantic_model_creator(
+    Account,
+    name="LoginSchema",
+    include=["username", "password"],
+    exclude_readonly=True,
+)
 
 """
 2. response_schema

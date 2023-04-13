@@ -11,6 +11,7 @@ from sentry_sdk.integrations.redis import RedisIntegration
 
 from conf.config import LocalConfig, local_configs
 from core.loguru import init_loguru
+from common.fastapi import RespSchemaAPIRouter
 from storages.redis import AsyncRedisUtil, keys
 from common.responses import AesResponse
 from common.exceptions import ApiException
@@ -180,6 +181,7 @@ def create_app(current_settings: LocalConfig):
         version=local_configs.PROJECT.VERSION,
         lifespan=lifespan,
     )
+    main_app.router.route_class = RespSchemaAPIRouter
     main_app.logger = logger
     # thread local just flask like g
     # main_app.add_middleware(GlobalsMiddleware)

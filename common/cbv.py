@@ -8,6 +8,8 @@ from fastapi import Depends, APIRouter
 from pydantic.typing import is_classvar
 from starlette.routing import Route, WebSocketRoute
 
+from common.fastapi import RespSchemaAPIRouter
+
 T = TypeVar("T")
 
 CBV_CLASS_KEY = "__cbv_class__"
@@ -37,7 +39,7 @@ def _cbv(router: APIRouter, cls: type[T]) -> type[T]:
     function calls that will properly inject an instance of `cls`.
     """
     _init_cbv(cls)
-    cbv_router = APIRouter()
+    cbv_router = APIRouter(route_class=RespSchemaAPIRouter)
     function_members = inspect.getmembers(cls, inspect.isfunction)
     functions_set = {func for _, func in function_members}
     cbv_routes = [

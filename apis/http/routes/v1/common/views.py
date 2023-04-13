@@ -3,9 +3,10 @@ from typing import Dict, Tuple, Union
 from fastapi import Query, Depends, APIRouter
 
 from storages import enums
+from common.fastapi import RespSchemaAPIRouter
 from common.responses import Resp
 
-router = APIRouter(prefix="/common")
+router = APIRouter(prefix="/common", route_class=RespSchemaAPIRouter)
 
 
 @router.get(

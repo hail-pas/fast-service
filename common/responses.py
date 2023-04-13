@@ -3,7 +3,8 @@ from math import ceil
 from typing import Any, List, Generic, TypeVar, Optional, Sequence
 from datetime import datetime
 
-from pydantic import Field, BaseModel, validator
+from loguru import logger
+from pydantic import Field, BaseModel
 from pydantic.generics import GenericModel
 from starlette.responses import JSONResponse
 
@@ -75,18 +76,24 @@ class Resp(GenericModel, Generic[DataT]):
     message: Optional[str] = Field(default=None, description="响应提示信息")
     data: Optional[DataT] = Field(default=None, description="响应数据格式")
 
-    @validator("data", always=True)
-    def check_consistency(cls, v, values):
-        if (
-            values.get("message") is None
-            and values.get("code") != ResponseCodeEnum.success.value
-        ):
-            raise ValueError(
-                f"Must provide a message when code is not {ResponseCodeEnum.success.value}!"
+    def __init__(__pydantic_self__, **data: Any):
+        super().__init__(**data)
+        code = data.get("code")
+        if code:
+            logger.bind(json=True).warning(
+                {"code": code, "message": data.get("message")}
             )
-        # if values.get("message") and v:
-        # raise ValueError("Response can't provide both message and data!")
-        return v
+
+    # @validator("data", always=True)
+    # def check_consistency(cls, v, values):
+    #     if (
+    #         values.get("message") is None
+    #         and values.get("code") != ResponseCodeEnum.success.value
+    #     ):
+    #         raise ValueError(
+    #             f"Must provide a message when code is not {ResponseCodeEnum.success.value}!"
+    #         )
+    #     return v
 
     @classmethod
     def fail(cls, message: str, code: int = ResponseCodeEnum.failed.value):

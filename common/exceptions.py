@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 from starlette.exceptions import HTTPException
 
+from common.messages import ValidationErrorMsgTemplates
 from common.responses import AesResponse, ResponseCodeEnum
 
 
@@ -27,51 +28,51 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     :param exc:
     :return:
     """
+    logger.bind(json=True).warning(
+        {"code": exc.status_code, "message": exc.detail}
+    )
     return AesResponse(
         content={"code": exc.status_code, "message": exc.detail, "data": None}
     )
 
 
-# ?? 配置 pydantic config未生效
-error_msg_template = {
-    "value_error.missing": "缺少必填字段",
-    "value_error.any_str.max_length": "最长不超过{limit_value}个字符",
-    "value_error.any_str.min_length": "至少{limit_value}个字符",
-}
-
-
 async def validation_exception_handler(request, exc):
     """参数校验错误"""
     try:
-        error = ujson.loads(exc.json())[0]
-        field = error["loc"][0]
-        error_type = error["type"]
-        ctx = error["ctx"]
-        # error['loc'][-1], error['msg']
-        # errors = exc.raw_errors[0].exc
-        # model = errors.model
-        # errors = errors.errors()
-        # fields: dict = model.Config.fields
-        # field = errors[0]["loc"][0]
-        # if field in fields:
-        #     field = fields[field].get("description") or field
-        # error_type = errors[0]["type"]
-        # ctx = errors[0].get("ctx") or {}
+        error = exc.raw_errors[0]
+        error_exc = error.exc
+        error_exc_data = ujson.loads(error_exc.json())
+        field_name = error_exc_data[0]["loc"][0]
+        model = error_exc.model
+        fields: dict = model.__fields__
+        if field_name in fields:
+            field_name = (
+                fields[field_name].field_info.description or field_name
+            )
+        error_type = error_exc_data[0]["type"]
+        ctx = error_exc_data[0].get("ctx") or {}
         msg = (
-            error_msg_template[error_type].format(**ctx)
-            if error_type in error_msg_template
-            else error["msg"]
+            ValidationErrorMsgTemplates[error_type].format(**ctx)
+            if error_type in ValidationErrorMsgTemplates
+            else error_exc_data[0]["msg"]
         )
     except AttributeError:
-        errors = exc.errors()
-        field = errors[0]["loc"][0]
-        msg = errors[0]["msg"]
+        error_exc_data = ujson.loads(exc.json())
+        field_name = error_exc_data[0]["loc"][0]
+        msg = error_exc_data[0]["msg"]
 
+    logger.bind(json=True).warning(
+        {
+            "code": ResponseCodeEnum.validation_error.value,
+            "field": field_name,
+            "message": msg,
+        }
+    )
     return AesResponse(
         content={
             "code": ResponseCodeEnum.validation_error.value,
-            "message": f"{field}: {msg}",
-            "data": None,
+            "message": f"{field_name}: {msg}",
+            "data": error_exc_data,
         }
     )
 
@@ -87,6 +88,7 @@ class ApiException(Exception):
     def __init__(
         self, message: str, code: int = ResponseCodeEnum.failed.value
     ):
+        logger.bind(json=True).warning({"code": code, "message": message})
         self.code = code
         self.message = message
 
