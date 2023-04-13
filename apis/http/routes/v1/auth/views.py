@@ -14,6 +14,11 @@ from common.encrypt import Jwt, PasswordUtil
 from common.fastapi import RespSchemaAPIRouter
 from common.responses import Resp, SimpleSuccess
 from apis.dependencies import jwt_required
+from common.constant.messages import (
+    ObjectNotExistMsgTemplate,
+    UsernameOrPasswordErrorMsg,
+    ObjectAlreadyExistMsgTemplate,
+)
 from storages.relational.curd.resource import get_resource_tree
 from storages.relational.models.account import Role, System, Account
 from storages.relational.pydantic.system import SystemList
@@ -66,9 +71,9 @@ async def login(login_data: LoginSchema):
         .first()
     )
     if not account:
-        return Resp.fail(message="用户不存在")
+        return Resp.fail(message=ObjectNotExistMsgTemplate % "账户")
     if not PasswordUtil.verify_password(login_data.password, account.password):
-        return Resp.fail(message="用户名或密码错误")
+        return Resp.fail(message=UsernameOrPasswordErrorMsg)
     account.last_login_at = datetime_now()
     await account.save(update_fields=["last_login_at"])
     expired_at = datetime_now() + timedelta(
@@ -97,7 +102,7 @@ async def login(login_data: LoginSchema):
 # async def oauth_login(login_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 #     if login_data.grant_type == "password":
 #         return await login(LoginSchema(username=login_data.username, password=login_data.password))
-#     return Resp.fail(message="暂不支持的登录方式")
+#     return Resp.fail(message=ActionNotSupportMsgTemplate % "登录方式")
 
 
 @router.post(
@@ -142,12 +147,12 @@ async def register(register_in: AccountCreate) -> Resp[AccountDetail]:
     for role_id in role_ids:
         role = await Role.get_or_none(id=role_id)
         if not role:
-            return Resp.fail("角色不存在")
+            return Resp.fail(ObjectNotExistMsgTemplate % "角色")
         roles.append(role)
     try:
         account = await Account.create(**data)
         await account.roles.add(*roles)
     except IntegrityError:
-        return Resp.fail("用户已存在")
+        return Resp.fail(ObjectAlreadyExistMsgTemplate % "用户")
     data = await AccountDetail.from_tortoise_orm(account)
     return Resp[AccountDetail](data=data)

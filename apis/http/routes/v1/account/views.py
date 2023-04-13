@@ -7,6 +7,7 @@ from apis.http.curd import CURDGenerator
 from common.fastapi import RespSchemaAPIRouter
 from common.responses import Resp
 from apis.dependencies import account_permission_check
+from common.constant.messages import ObjectNotExistMsgTemplate
 from storages.relational.curd.resource import get_resource_tree
 from storages.relational.pydantic.role import (
     RoleList,
@@ -137,12 +138,12 @@ async def resource_tree(
     """
     system = await System.get(id=system_id)
     if not system:
-        return Resp.fail(message="系统不存在")
+        return Resp.fail(message=ObjectNotExistMsgTemplate % "系统")
     role = None
     if role_id:
         role = await Role.get_or_none(id=role_id)
         if not role:
-            return Resp.fail(message="角色不存在")
+            return Resp.fail(message=ObjectNotExistMsgTemplate % "角色")
     return Resp[List[ResourceLevelTreeNode]](
         data=await get_resource_tree(
             system=system,

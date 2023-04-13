@@ -63,6 +63,10 @@ class MyEnum(enum.Enum):
             description = f"{description}、{k}-{v}"
         return f"choices: {description}"
 
+    @property
+    def label(self):
+        return self._label
+
     def _generate_next_value_(name, start, count, last_values) -> str:  # type: ignore
         """
         Uses the name as the automatic value, rather than an integer
@@ -76,7 +80,7 @@ class IntEnumMore(int, MyEnum):
     def __new__(cls, value, label):
         obj = int.__new__(cls)
         obj._value_ = value
-        obj.label = label
+        obj._label = label
         return obj
 
     def __str__(self) -> str:
@@ -92,7 +96,7 @@ class StrEnumMore(str, MyEnum):
     def __new__(cls, value, label):
         obj = str.__new__(cls)
         obj._value_ = value
-        obj.label = label
+        obj._label = label
         return obj
 
     def __str__(self) -> str:

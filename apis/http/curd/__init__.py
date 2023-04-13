@@ -27,6 +27,10 @@ from common.schemas import CURDPager
 from common.responses import Resp, PageResp, generate_page_info
 from apis.dependencies import paginate
 from common.exceptions import ApiException
+from common.constant.messages import (
+    ObjectNotExistMsgTemplate,
+    ObjectAlreadyExistMsgTemplate,
+)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -85,7 +89,9 @@ async def update_create_data_clean(
                     **{field.to_field: data[key]}
                 )
                 if not obj:
-                    raise ApiException(f"{field.description}不存在")
+                    raise ApiException(
+                        ObjectNotExistMsgTemplate % field.description
+                    )
             cleaned_data[key] = data[key]
             continue
 
@@ -98,7 +104,8 @@ async def update_create_data_clean(
                 obj = await model.get_or_none(id=related_id)
                 if not obj:
                     raise ApiException(
-                        f"id为{related_id}的{model._meta.table_description}不存在"
+                        ObjectNotExistMsgTemplate
+                        % f"id为{related_id}的{model._meta.table_description}"
                     )
                 m2m_fields_data[key].append(obj)
             continue
@@ -388,7 +395,7 @@ class CURDGenerator(Generic[T], APIRouter):
                     data=await self.retrieve_schema.from_tortoise_orm(model)
                 )
             else:
-                return Resp.fail("对象不存在")
+                return Resp.fail(ObjectNotExistMsgTemplate % "对象")
 
         return route
 
@@ -406,7 +413,8 @@ class CURDGenerator(Generic[T], APIRouter):
                 await obj.save()
             except IntegrityError:
                 raise ApiException(
-                    f"{self.db_model._meta.table_description}已存在"
+                    ObjectAlreadyExistMsgTemplate
+                    % f"{self.db_model._meta.table_description}"
                 )
 
             for k, v in m2m_data.items():
@@ -428,7 +436,7 @@ class CURDGenerator(Generic[T], APIRouter):
                 id=id
             )
             if not obj:
-                return Resp.fail("对象不存在")
+                return Resp.fail(ObjectNotExistMsgTemplate % "对象")
             data, m2m_data = await update_create_data_clean(
                 model.dict(exclude_unset=True), self.db_model
             )
@@ -439,7 +447,8 @@ class CURDGenerator(Generic[T], APIRouter):
                     ).update(**data)
                 except IntegrityError:
                     raise ApiException(
-                        f"{self.db_model._meta.table_description}已存在"
+                        ObjectAlreadyExistMsgTemplate
+                        % f"{self.db_model._meta.table_description}"
                     )
             if m2m_data:
                 for k, v in m2m_data.items():
@@ -468,9 +477,6 @@ class CURDGenerator(Generic[T], APIRouter):
             return Resp()
 
         return route
-
-    def _raise(self, e: Exception, status_code: int = 422) -> HTTPException:
-        raise HTTPException(422, ", ".join(e.args)) from e
 
     @staticmethod
     def get_routes() -> List[str]:

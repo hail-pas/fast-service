@@ -70,11 +70,11 @@ def setup_middleware(main_app: FastAPI):
                     if isinstance(middle_fc[1], dict):
                         main_app.add_middleware(middle_fc[0], **middle_fc[1])
                     else:
-                        raise Exception(
+                        raise RuntimeError(
                             f"Require Dict as kwargs for middleware class, Got {type(middle_fc[1])}"
                         )
                 else:
-                    raise Exception(
+                    raise RuntimeError(
                         f"Require Class, But Got {type(middle_fc[0])}"
                     )
         except Exception as e:

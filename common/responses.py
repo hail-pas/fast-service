@@ -12,6 +12,14 @@ from common.types import IntEnumMore
 from common.utils import DATETIME_FORMAT_STRING, datetime_now
 from common.schemas import Pager
 from common.pydantic import DateTimeFormatConfig
+from common.constant.messages import (
+    FailedMsg,
+    SuccessMsg,
+    FrobiddenMsg,
+    UnauthorizedMsg,
+    ParameterErrorMsg,
+    InternalServerErrorMsg,
+)
 
 
 @unique
@@ -21,16 +29,16 @@ class ResponseCodeEnum(IntEnumMore):
     """
 
     # 唯一成功响应
-    success = (0, "成功")
+    success = (0, SuccessMsg)
 
     # custom error code
-    failed = (-1, "失败")
-    unauthorized = (-2, "invalid or expired credential")
-    validation_error = (-3, "参数校验错误")
+    failed = (-1, FailedMsg)
+    unauthorized = (-2, UnauthorizedMsg)
+    validation_error = (-3, ParameterErrorMsg)
 
     # http error code
-    internal_error = (500, "内部错误")
-    forbidden = (403, "禁止访问")
+    internal_error = (500, InternalServerErrorMsg)
+    forbidden = (403, FrobiddenMsg)
 
 
 class AesResponse(JSONResponse):

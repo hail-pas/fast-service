@@ -18,6 +18,17 @@ from common.encrypt import Jwt, SignAuth
 from common.schemas import Pager, CURDPager
 from common.responses import ResponseCodeEnum
 from common.exceptions import ApiException
+from common.constant.messages import (
+    JsonRequiredMsg,
+    TokenExpiredMsg,
+    SignCheckErrorMsg,
+    TimestampExpiredMsg,
+    IPNotAllowewedMsgTemplate,
+    ObjectNotExistMsgTemplate,
+    AuthorizationHeaderInvalidMsg,
+    AuthorizationHeaderMissingMsg,
+    AuthorizationHeaderTypeErrorMsg,
+)
 from storages.relational.models.account import Account
 
 
@@ -30,20 +41,23 @@ class TheBearer(HTTPBearer):
         authorization: str = request.headers.get("Authorization")
         if not authorization:
             raise ApiException(
-                ResponseCodeEnum.unauthorized.value, "未携带授权头部信息"
+                ResponseCodeEnum.unauthorized.value,
+                AuthorizationHeaderMissingMsg,
             )
         scheme, credentials = get_authorization_scheme_param(authorization)
         if not (authorization and scheme and credentials):
             if self.auto_error:
                 raise ApiException(
-                    ResponseCodeEnum.unauthorized.value, "授权头部信息有误"
+                    ResponseCodeEnum.unauthorized.value,
+                    AuthorizationHeaderInvalidMsg,
                 )
             else:
                 return None
         if scheme != "Bearer":
             if self.auto_error:
                 raise ApiException(
-                    ResponseCodeEnum.unauthorized.value, "授权信息类型错误, 请使用 Bearer"
+                    ResponseCodeEnum.unauthorized.value,
+                    AuthorizationHeaderTypeErrorMsg,
                 )
             else:
                 return None
@@ -85,7 +99,7 @@ def paginate(
                 field = field[1:]
             if field not in model._meta.db_fields:
                 raise ApiException(
-                    f"排序字段 {field} 不存在",
+                    ObjectNotExistMsgTemplate % f"排序字段 {field} ",
                 )
         return CURDPager(
             limit=size,
@@ -108,25 +122,28 @@ async def jwt_required(
         account_id = payload.account_id
         if account_id is None:
             raise ApiException(
-                code=ResponseCodeEnum.unauthorized.value, message="授权头部信息有误"
+                code=ResponseCodeEnum.unauthorized.value,
+                message=AuthorizationHeaderInvalidMsg,
             )
     except jwt.ExpiredSignatureError:
         raise ApiException(
-            code="token过期", message=ResponseCodeEnum.unauthorized.value
+            code=ResponseCodeEnum.unauthorized.value, message=TokenExpiredMsg
         )
     # except jwt.JWTError:
-    #     raise ApiException(ResponseCodeEnum.unauthorized.value, "授权头部信息有误")
+    # raise ApiException(ResponseCodeEnum.unauthorized.value, AuthorizationHeaderInvalidMsg)
     # # 初始化全局用户信息，后续处理函数中直接使用
     except Exception:
         logger.error("解析token失败: e")
         raise ApiException(
-            code="授权头部信息有误", message=ResponseCodeEnum.unauthorized.value
+            code=ResponseCodeEnum.unauthorized.value,
+            message=AuthorizationHeaderInvalidMsg,
         )
 
     account = await Account.get_or_none(id=account_id)
     if not account:
         raise ApiException(
-            code="授权头部信息有误", message=ResponseCodeEnum.unauthorized.value
+            code=ResponseCodeEnum.unauthorized.value,
+            message=AuthorizationHeaderInvalidMsg,
         )
     request.scope["user"] = account
     return account
@@ -165,7 +182,10 @@ async def account_permission_check(
     if f"{method}:{path}" in permissions:
         return account
 
-    raise ApiException(code=ResponseCodeEnum.forbidden.value, message="没有权限")
+    raise ApiException(
+        code=ResponseCodeEnum.forbidden.value,
+        message=ResponseCodeEnum.forbidden.label,
+    )
 
 
 async def sign_check(
@@ -183,14 +203,14 @@ async def sign_check(
             sign_str = await request.body()
             sign_str = sign_str.decode()
         except Exception:
-            raise ApiException("json body required")
+            raise ApiException(JsonRequiredMsg)
     sign_str = sign_str + f".{x_timestamp}"
     if int(time.time()) - x_timestamp > 60:
-        raise ApiException("timestamp expired")
+        raise ApiException(TimestampExpiredMsg)
     if not x_signature or not SignAuth(local_configs.SIGN_SECRET).verify(
         x_signature, sign_str
     ):
-        raise ApiException("sign check failed")
+        raise ApiException(SignCheckErrorMsg)
 
 
 class CheckAllowedHost:
@@ -214,4 +234,4 @@ class CheckAllowedHost:
                         in local_configs.SERVER.ALLOW_HOSTS
                     ):
                         return
-        raise ApiException(f"IP {caller_host} 不在访问白名单")
+        raise ApiException(IPNotAllowewedMsgTemplate % caller_host)

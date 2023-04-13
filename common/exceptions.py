@@ -6,8 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 from starlette.exceptions import HTTPException
 
-from common.messages import ValidationErrorMsgTemplates
 from common.responses import AesResponse, ResponseCodeEnum
+from common.constant.messages import ValidationErrorMsgTemplates
 
 
 async def unexpected_exception_handler(request, exc):
