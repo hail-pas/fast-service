@@ -15,6 +15,7 @@ from common.fastapi import RespSchemaAPIRouter
 from storages.redis import AsyncRedisUtil, keys
 from common.responses import AesResponse
 from common.exceptions import ApiException
+from common.constant.tags import TagsEnum
 
 init_loguru()
 
@@ -180,6 +181,10 @@ def create_app(current_settings: LocalConfig):
         redoc_url=local_configs.SERVER.REDOC_URL,
         version=local_configs.PROJECT.VERSION,
         lifespan=lifespan,
+        openapi_tags=[
+            {"name": name, "description": description}
+            for name, description in TagsEnum.choices
+        ],
     )
     main_app.router.route_class = RespSchemaAPIRouter
     main_app.logger = logger

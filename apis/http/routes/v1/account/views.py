@@ -7,6 +7,7 @@ from apis.http.curd import CURDGenerator
 from common.fastapi import RespSchemaAPIRouter
 from common.responses import Resp
 from apis.dependencies import account_permission_check
+from common.constant.tags import TagsEnum
 from common.constant.messages import ObjectNotExistMsgTemplate
 from storages.relational.curd.resource import get_resource_tree
 from storages.relational.pydantic.role import (
@@ -67,7 +68,7 @@ router.include_router(
         filter_schema=AccountFilterSchema,
         retrieve_schema=AccountDetail,
         search_fields=["username", "nickname"],
-        tags=["账户信息管理"],
+        tags=[TagsEnum.account],
     )
 )
 
@@ -80,7 +81,7 @@ router.include_router(
         update_schema=RoleUpdate,
         retrieve_schema=RoleDetail,
         search_fields=["label"],
-        tags=["角色管理"],
+        tags=[TagsEnum.role],
     )
 )
 
@@ -93,7 +94,7 @@ router.include_router(
         update_schema=SystemUpdate,
         retrieve_schema=SystemDetail,
         search_fields=["label"],
-        tags=["系统管理"],
+        tags=[TagsEnum.system],
     )
 )
 
@@ -106,7 +107,7 @@ router.include_router(
         update_schema=PermissionUpdate,
         retrieve_schema=PermissionDetail,
         search_fields=["label"],
-        tags=["权限管理"],
+        tags=[TagsEnum.permission],
     )
 )
 
@@ -123,12 +124,12 @@ router.include_router(
             "code",
             "label",
         ],
-        tags=["资源管理"],
+        tags=[TagsEnum.resource],
     )
 )
 
 
-@router.get("resource/tree", tags=["资源管理"], summary="获取资源树")
+@router.get("resource/tree", tags=[TagsEnum.resource], summary="获取资源树")
 async def resource_tree(
     role_id: Optional[uuid.UUID] = Query(None, description="角色id"),
     system_id: uuid.UUID = Query(..., description="系统id"),

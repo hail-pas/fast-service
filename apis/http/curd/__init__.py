@@ -23,6 +23,7 @@ from tortoise.exceptions import IntegrityError
 from tortoise.expressions import Q
 from tortoise.transactions import atomic
 
+from common.fastapi import RespSchemaAPIRouter
 from common.schemas import CURDPager
 from common.responses import Resp, PageResp, generate_page_info
 from apis.dependencies import paginate
@@ -199,7 +200,9 @@ class CURDGenerator(Generic[T], APIRouter):
         prefix = self._base_path + prefix.strip("/")
         tags = tags or [prefix.strip("/").capitalize()]
 
-        super().__init__(prefix=prefix, tags=tags, **kwargs)
+        super().__init__(
+            prefix=prefix, tags=tags, route_class=RespSchemaAPIRouter, **kwargs
+        )
 
         if get_all_route:
             self._add_api_route(
