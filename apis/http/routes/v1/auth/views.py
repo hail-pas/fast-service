@@ -23,6 +23,7 @@ from storages.relational.curd.resource import get_resource_tree
 from storages.relational.models.account import Role, System, Account
 from storages.relational.pydantic.system import SystemList
 from storages.relational.pydantic.account import (
+    AccountList,
     AccountCreate,
     AccountDetail,
     AccountDetailWithResource,
@@ -156,3 +157,29 @@ async def register(register_in: AccountCreate) -> Resp[AccountDetail]:
         return Resp.fail(ObjectAlreadyExistMsgTemplate % "用户")
     data = await AccountDetail.from_tortoise_orm(account)
     return Resp[AccountDetail](data=data)
+
+
+inner_account_register_callback_router = APIRouter()
+
+
+@inner_account_register_callback_router.post(
+    "{$callback_host}/callback/account/{$request.body.username}",
+    summary="内部用户注册回调",
+    description="内部用户注册回调接口",
+)
+def inner_register_callback(
+    account: AccountList,
+) -> SimpleSuccess:
+    pass
+
+
+@router.post(
+    "/register/inner",
+    summary="内部用户注册",
+    description="内部用户注册注册接口",
+    callbacks=inner_account_register_callback_router.routes,
+)
+async def inner_register(
+    register_in: AccountCreate, callback_host: str
+) -> SimpleSuccess:
+    return SimpleSuccess()
