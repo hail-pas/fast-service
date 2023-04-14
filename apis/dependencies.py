@@ -13,7 +13,7 @@ from fastapi.security.utils import get_authorization_scheme_param
 
 from conf.config import local_configs
 from common.types import JwtPayload
-from common.utils import flatten_list, get_client_ip
+from common.utils import get_client_ip
 from common.encrypt import Jwt, SignAuth
 from common.schemas import Pager, CURDPager
 from common.responses import ResponseCodeEnum
@@ -22,6 +22,7 @@ from common.constant.messages import (
     JsonRequiredMsg,
     TokenExpiredMsg,
     SignCheckErrorMsg,
+    BrokenAccessControl,
     TimestampExpiredMsg,
     IPNotAllowewedMsgTemplate,
     ObjectNotExistMsgTemplate,
@@ -29,7 +30,8 @@ from common.constant.messages import (
     AuthorizationHeaderMissingMsg,
     AuthorizationHeaderTypeErrorMsg,
 )
-from storages.relational.models.account import Account
+from storages.relational.models import Account
+from storages.relational.curd.account import get_permissions
 
 
 class TheBearer(HTTPBearer):
@@ -111,9 +113,10 @@ def paginate(
     return get_pager
 
 
-async def jwt_required(
+async def token_required(
     request: Request,
     token: Annotated[HTTPAuthorizationCredentials, Depends(auth_schema)],
+    x_role_id: str = Header(..., description="角色id"),
 ) -> Account:
     jwt_secret: str = local_configs.JWT.SECRET
     try:
@@ -139,41 +142,33 @@ async def jwt_required(
             message=AuthorizationHeaderInvalidMsg,
         )
 
-    account = await Account.get_or_none(id=account_id)
+    account: Optional[Account] = (
+        await Account.filter(id=account_id).prefetch_related("roles").first()
+    )
     if not account:
         raise ApiException(
             code=ResponseCodeEnum.unauthorized.value,
             message=AuthorizationHeaderInvalidMsg,
         )
+    role = await account.roles.filter(id=x_role_id).first()
+    if not role:
+        raise ApiException(
+            code=ResponseCodeEnum.unauthorized.value,
+            message=BrokenAccessControl,
+        )
+    request.scope["role"] = role
     request.scope["user"] = account
     return account
 
 
-async def get_permissions(account: Account) -> set:
-    permission_set = set(
-        flatten_list(
-            await account.roles.all()
-            .prefetch_related("permissions", "resources")
-            .values_list("permissions__code", "resources__permissions__code")
-        )
-    )
-    # for role in await account.roles.all().prefetch_related("permissions", "resources"):
-    #     permission_set |= set(await role.permissions.all().values_list("code", flat=True))
-    #     for resource in await role.resources.all():
-    #         permission_set |= set(await resource.permissions.all().values_list("code", flat=True))
-    return permission_set
-
-
-# depends on jwt_required
-async def account_permission_check(
+# depends on token_required
+async def api_permission_check(
     request: Request,
-    # token: HTTPAuthorizationCredentials = Depends(auth_schema)
-    token: Annotated[HTTPAuthorizationCredentials, Depends(auth_schema)],
+    account: Account = Depends(token_required),
 ) -> Account:
     # router = request.scope["router"]
     # endpoint = request.scope["endpoint"]
-    account: Account = await jwt_required(request, token)
-    permissions = await get_permissions(account)
+    permissions = await get_permissions(account, request.scope["role"])
 
     method = request.method
     path = request.scope["path"]

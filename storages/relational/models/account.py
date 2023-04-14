@@ -78,6 +78,8 @@ class Permission(UUIDPrimaryKeyModel):
 
 
 class System(BaseModel):
+    """Organization"""
+
     code = fields.CharField(max_length=64, description="系统唯一标识", unique=True)
     label = fields.CharField(max_length=128, description="系统名称")
 
@@ -109,8 +111,14 @@ class Resource(BaseModel):
         "master.Resource",
         related_name="relied_nodes",
         null=True,
-        desscription="关联依赖",
+        desscription="依赖节点",
     )
+    # reference_to = fields.ForeignKeyField(
+    #     "master.Resource",
+    #     related_name="reference_from_nodes",
+    #     null=True,
+    #     desscription="延伸节点",
+    # )
     order_num = fields.IntField(default=1, description="排列序号")
     enabled = fields.BooleanField(default=True, description="当前分组是否可用")
     assignable = fields.BooleanField(default=True, description="配置时是否可分配")
@@ -120,6 +128,9 @@ class Resource(BaseModel):
     systems: fields.ManyToManyRelation["System"] = fields.ManyToManyField(
         "master.System", related_name="resources"
     )
+    # available_front_end = fields.JSONField(
+    #     default=list, description="可用的终端类型标签"
+    # )
 
     # reversed relations
     roles: fields.ManyToManyRelation["Role"]

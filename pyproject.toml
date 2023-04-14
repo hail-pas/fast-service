@@ -37,19 +37,18 @@ elasticsearch = { extras = ["async"], version = "7.8.0" }
 [tool.poetry.dev-dependencies]
 # poetry install --no-dev
 requests = "2.28.2"
-pytest-asyncio = "0.15.1"
+pytest-asyncio = "0.21.0"
 factory-boy = "3.2.1"
-asynctest = "0.13.0"
-taskipy = "1.10.3"
 bandit = "1.7.5"
 black = "23.1.0"
 flake8 = "6.0.0"
 isort = "5.12.0"
 
-[[tool.poetry.source]]
-name = "local"
-default = true
-url = "http://192.168.3.59:8082/simple/"
+
+# [[tool.poetry.source]]
+# name = "local"
+# default = true
+# url = "http://192.168.3.59:8082/simple/"
 
 
 [tool.aerich]

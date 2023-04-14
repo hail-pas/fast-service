@@ -21,6 +21,16 @@ SystemDetail = pydantic_model_creator(
     ],
 )
 
+SystemListWithRoles = pydantic_model_creator(
+    System,
+    name="SystemListWithRoles",
+    exclude=[
+        "resources",
+        # "roles",
+    ],
+)
+
+
 SystemCreate = pydantic_model_creator(
     System, name="SystemCreate", exclude=["deleted_at"], exclude_readonly=True
 )

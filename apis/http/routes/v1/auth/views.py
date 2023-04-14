@@ -1,32 +1,26 @@
-import json
 from typing import Optional
-from datetime import datetime, timedelta
 
 from fastapi import Depends, APIRouter
-from pydantic import BaseModel
 from tortoise.exceptions import IntegrityError
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-from conf.config import local_configs
-from common.types import JwtPayload
 from common.utils import datetime_now
-from common.encrypt import Jwt, PasswordUtil
+from common.encrypt import PasswordUtil
 from common.fastapi import RespSchemaAPIRouter
 from common.responses import Resp, SimpleSuccess
-from apis.dependencies import jwt_required
+from apis.dependencies import token_required
 from common.constant.messages import (
     ObjectNotExistMsgTemplate,
     UsernameOrPasswordErrorMsg,
     ObjectAlreadyExistMsgTemplate,
 )
-from storages.relational.curd.resource import get_resource_tree
-from storages.relational.models.account import Role, System, Account
-from storages.relational.pydantic.system import SystemList
+from storages.relational.curd.account import get_auth_data
+from storages.relational.models.account import Role, Account
 from storages.relational.pydantic.account import (
+    AuthData,
     AccountList,
     AccountCreate,
     AccountDetail,
-    AccountDetailWithResource,
 )
 
 router = APIRouter(route_class=RespSchemaAPIRouter)
@@ -45,17 +39,6 @@ LoginSchema = pydantic_model_creator(
 """
 2. response_schema
 """
-
-
-class AuthData(BaseModel):
-    token_type: str
-    access_token: str
-    expired_at: datetime
-    account: AccountDetailWithResource
-
-    class Config:
-        orm_mode = True
-
 
 """
 3. view_func
@@ -77,26 +60,7 @@ async def login(login_data: LoginSchema):
         return Resp.fail(message=UsernameOrPasswordErrorMsg)
     account.last_login_at = datetime_now()
     await account.save(update_fields=["last_login_at"])
-    expired_at = datetime_now() + timedelta(
-        minutes=local_configs.JWT.EXPIRATION_DELTA_MINUTES
-    )
-    payload = JwtPayload(account_id=account.id, expired_at=expired_at)
-    data = {
-        "token_type": "Bearer",
-        "access_token": Jwt(local_configs.JWT.SECRET).get_jwt(
-            json.loads(payload.json())
-        ),
-        "expired_at": expired_at,
-        "account": await AccountDetailWithResource.from_tortoise_orm(account),
-    }
-
-    data["account"].resources = await get_resource_tree(
-        system=await System.get(code="burnish"), role=account.roles[0]
-    )
-    data["account"].systems = await SystemList.from_queryset(
-        System.filter(roles__in=await account.roles.all())
-    )
-    return Resp[AuthData](data=AuthData(**data))
+    return Resp[AuthData](data=await get_auth_data(account))
 
 
 # @router.post("/oauth/login", summary="第三方登录", description="第三方登录接口", response_model=Resp[AuthData])
@@ -113,20 +77,9 @@ async def login(login_data: LoginSchema):
     response_model=Resp[AuthData],
 )
 async def refresh_token(
-    account: Account = Depends(jwt_required),
+    account: Account = Depends(token_required),
 ):
-    expired_at = datetime_now() + timedelta(
-        minutes=local_configs.JWT.EXPIRATION_DELTA_MINUTES
-    )
-    data = {
-        "token_type": "Bearer",
-        "token_value": Jwt(local_configs.JWT.SECRET).get_jwt(
-            {"account_id": account.id, "exp": expired_at}
-        ),
-        "expired_at": expired_at,
-        "account": account,
-    }
-    return Resp[AuthData](data=AuthData(**data))
+    return Resp[AuthData](data=await get_auth_data(account))
 
 
 @router.post(
@@ -134,7 +87,7 @@ async def refresh_token(
     summary="登出",
     description="退出登录接口",
     response_model=SimpleSuccess,
-    dependencies=[Depends(jwt_required)],
+    dependencies=[Depends(token_required)],
 )
 async def logout():
     return SimpleSuccess()

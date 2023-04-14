@@ -6,7 +6,7 @@ from fastapi import Query, Depends, APIRouter
 from apis.http.curd import CURDGenerator
 from common.fastapi import RespSchemaAPIRouter
 from common.responses import Resp
-from apis.dependencies import account_permission_check
+from apis.dependencies import api_permission_check
 from common.constant.tags import TagsEnum
 from common.constant.messages import ObjectNotExistMsgTemplate
 from storages.relational.curd.resource import get_resource_tree
@@ -54,7 +54,7 @@ from storages.relational.pydantic.permission import (
 )
 
 router = APIRouter(
-    dependencies=[Depends(account_permission_check)],
+    dependencies=[Depends(api_permission_check)],
     route_class=RespSchemaAPIRouter,
 )
 

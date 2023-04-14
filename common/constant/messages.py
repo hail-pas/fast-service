@@ -24,6 +24,7 @@ AuthorizationHeaderMissingMsg = "未携带授权头部信息"
 AuthorizationHeaderInvalidMsg = "授权头部信息无效"
 AuthorizationHeaderTypeErrorMsg = "授权头部信息类型错误"
 TokenExpiredMsg = "授权已过期"
+BrokenAccessControl = "越权访问"
 
 # Object 对象相关
 ObjectNotExistMsgTemplate = "%s不存在"

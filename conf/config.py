@@ -78,12 +78,24 @@ class Relational(HostAndPort):
                         "maxsize": 20,
                     },
                 },
+                "test": {
+                    "engine": "tortoise.backends.mysql",
+                    "credentials": {
+                        "host": self.HOST,
+                        "port": self.PORT,
+                        "user": self.USERNAME,
+                        "password": self.PASSWORD,
+                        "database": f"{self.DB}_test",
+                        "echo": echo,
+                        "maxsize": 20,
+                    },
+                },
             },
             "apps": {
                 "master": {
                     "models": ["storages.relational.models", "aerich.models"],
                     "default_connection": "default",
-                }
+                },
             },
             # "use_tz": True,   # Will Always Use UTC as Default Timezone
             "timezone": "Asia/Shanghai",

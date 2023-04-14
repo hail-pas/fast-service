@@ -1,7 +1,8 @@
 import uuid
 from typing import List
+from datetime import datetime
 
-from pydantic import Field, validator
+from pydantic import Field, BaseModel, validator
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 from common.encrypt import PasswordUtil
@@ -9,7 +10,8 @@ from common.pydantic import optional
 from storages.relational.models import Account
 from storages.relational.pydantic.role import RoleList
 from storages.relational.pydantic.system import SystemList
-from storages.relational.pydantic.resource import ResourceLevelTreeNode
+
+# from storages.relational.pydantic.resource import ResourceLevelTreeNode
 
 AccountList = pydantic_model_creator(
     Account,
@@ -33,7 +35,7 @@ class AccountDetail(
 
 class AccountDetailWithResource(AccountDetail):
     systems: List[SystemList] = Field([], description="系统列表")
-    resources: List[ResourceLevelTreeNode] = Field([], description="资源列表")
+    # resources: List[ResourceLevelTreeNode] = Field([], description="资源列表")
 
 
 class AccountCreate(
@@ -61,3 +63,13 @@ class AccountUpdate(
     )
 ):
     pass
+
+
+class AuthData(BaseModel):
+    token_type: str
+    access_token: str
+    expired_at: datetime
+    account: AccountDetailWithResource
+
+    class Config:
+        orm_mode = True
