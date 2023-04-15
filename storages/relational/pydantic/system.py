@@ -1,7 +1,11 @@
+from typing import List
+
+from pydantic import Field
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 from common.pydantic import optional
 from storages.relational.models import System
+from storages.relational.pydantic.role import RoleList
 
 SystemList = pydantic_model_creator(
     System,
@@ -21,14 +25,18 @@ SystemDetail = pydantic_model_creator(
     ],
 )
 
-SystemListWithRoles = pydantic_model_creator(
-    System,
-    name="SystemListWithRoles",
-    exclude=[
-        "resources",
-        # "roles",
-    ],
-)
+
+class SystemListWithRoles(
+    pydantic_model_creator(
+        System,
+        name="SystemListWithRoles",
+        exclude=[
+            "resources",
+            # "roles",
+        ],
+    )
+):
+    roles: List[RoleList] = Field(..., description="角色列表")
 
 
 SystemCreate = pydantic_model_creator(

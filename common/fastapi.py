@@ -6,9 +6,9 @@ from contextlib import AsyncExitStack
 
 from fastapi import params
 from fastapi.utils import is_body_allowed_for_status_code
-from fastapi.routing import jsonable_encoder  # serialize_response,
 from fastapi.routing import (
     APIRoute,
+    jsonable_encoder,
     run_in_threadpool,
     run_endpoint_function,
     _prepare_response_content,
@@ -26,6 +26,24 @@ from fastapi.dependencies.utils import solve_dependencies
 from fastapi.dependencies.models import Dependant
 
 from common.responses import Resp, PageResp
+
+
+class AuthorizedRequest(Request):
+    from storages.relational.models import Role, Account
+
+    @property
+    def account(self) -> Account:
+        assert (
+            "user" in self.scope
+        ), "AuthenticationMiddleware must be installed to access request.account"
+        return self.scope["user"]
+
+    @property
+    def role(self) -> Role:
+        assert (
+            "role" in self.scope
+        ), "AuthenticationMiddleware must be installed to access request.role"
+        return self.scope["role"]
 
 
 async def serialize_response(
@@ -51,6 +69,7 @@ async def serialize_response(
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
+            custom_encoder=response_content.Config.json_encoders,
         )
 
     if field:

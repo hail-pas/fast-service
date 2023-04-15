@@ -2,8 +2,8 @@ from common.types import StrEnumMore
 
 
 class TagsEnum(StrEnumMore):
-    Root = ("Root", "根目录")
-    authorization = ("authorization", "授权相关")
+    root = ("Root", "根目录")
+    authorization = ("Authorization", "授权相关")
     account = ("Account", "账户信息管理")
     role = ("Role", "角色管理")
     system = ("System", "系统管理")

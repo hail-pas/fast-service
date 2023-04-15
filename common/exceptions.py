@@ -10,14 +10,47 @@ from common.responses import AesResponse, ResponseCodeEnum
 from common.constant.messages import ValidationErrorMsgTemplates
 
 
-async def unexpected_exception_handler(request, exc):
-    logger.error(f"Unexpected error: {exc}")
+class ApiException(Exception):
+    """
+    非 0 的业务错误
+    """
+
+    code: Optional[int] = ResponseCodeEnum.failed.value
+    message: Optional[str] = None
+
+    def __init__(
+        self, message: str, code: int = ResponseCodeEnum.failed.value
+    ):
+        self.code = code
+        self.message = message
+
+
+async def api_exception_handler(request: Request, exc: ApiException):
+    return AesResponse(
+        content={
+            "code": exc.code,
+            "message": exc.message,
+            "data": None,
+        },
+    )
+
+
+async def unexpected_exception_handler(request: Request, exc: Exception):
+    logger.bind(json=True).info(
+        {
+            "request_form": dict(await request.form()),
+            # "request_body": await request.json(),
+            "request_path_params": request.path_params,
+            "request_query_params": request.query_params._dict,
+            "request_headers": dict(request.headers),
+        }
+    )
     return AesResponse(
         content={
             "code": ResponseCodeEnum.internal_error.value,
             "message": str(exc) or ResponseCodeEnum.internal_error.label,
             "data": None,
-        }
+        },
     )
 
 
@@ -28,15 +61,14 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     :param exc:
     :return:
     """
-    logger.bind(json=True).warning(
-        {"code": exc.status_code, "message": exc.detail}
-    )
     return AesResponse(
-        content={"code": exc.status_code, "message": exc.detail, "data": None}
+        content={"code": exc.status_code, "message": exc.detail, "data": None},
     )
 
 
-async def validation_exception_handler(request, exc):
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+):
     """参数校验错误"""
     try:
         error = exc.raw_errors[0]
@@ -61,13 +93,6 @@ async def validation_exception_handler(request, exc):
         field_name = error_exc_data[0]["loc"][0]
         msg = error_exc_data[0]["msg"]
 
-    logger.bind(json=True).warning(
-        {
-            "code": ResponseCodeEnum.validation_error.value,
-            "field": field_name,
-            "message": msg,
-        }
-    )
     return AesResponse(
         content={
             "code": ResponseCodeEnum.validation_error.value,
@@ -77,29 +102,9 @@ async def validation_exception_handler(request, exc):
     )
 
 
-class ApiException(Exception):
-    """
-    非 0 的业务错误
-    """
-
-    code: Optional[int] = ResponseCodeEnum.failed.value
-    message: Optional[str] = None
-
-    def __init__(
-        self, message: str, code: int = ResponseCodeEnum.failed.value
-    ):
-        logger.bind(json=True).warning({"code": code, "message": message})
-        self.code = code
-        self.message = message
-
-    def to_result(self):
-        return AesResponse(
-            content={"code": self.code, "message": self.message, "data": None}
-        )
-
-
 roster = [
+    (RequestValidationError, validation_exception_handler),
+    (ApiException, api_exception_handler),
     (HTTPException, http_exception_handler),
     (Exception, unexpected_exception_handler),
-    (RequestValidationError, validation_exception_handler),
 ]

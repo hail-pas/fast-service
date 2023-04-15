@@ -1,7 +1,7 @@
 import uuid
-from typing import List, Optional
+from typing import List
 
-from fastapi import Query, Depends, APIRouter
+from fastapi import Query, Depends, Request, APIRouter
 
 from apis.http.curd import CURDGenerator
 from common.fastapi import RespSchemaAPIRouter
@@ -131,7 +131,7 @@ router.include_router(
 
 @router.get("resource/tree", tags=[TagsEnum.resource], summary="获取资源树")
 async def resource_tree(
-    role_id: Optional[uuid.UUID] = Query(None, description="角色id"),
+    request: Request,
     system_id: uuid.UUID = Query(..., description="系统id"),
 ) -> Resp[List[ResourceLevelTreeNode]]:
     """
@@ -140,11 +140,9 @@ async def resource_tree(
     system = await System.get(id=system_id)
     if not system:
         return Resp.fail(message=ObjectNotExistMsgTemplate % "系统")
-    role = None
-    if role_id:
-        role = await Role.get_or_none(id=role_id)
-        if not role:
-            return Resp.fail(message=ObjectNotExistMsgTemplate % "角色")
+    role = request.scope["role"]
+    # if not role:
+    # return Resp.fail(message=ObjectNotExistMsgTemplate % "角色")
     return Resp[List[ResourceLevelTreeNode]](
         data=await get_resource_tree(
             system=system,

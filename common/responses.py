@@ -3,7 +3,6 @@ from math import ceil
 from typing import Any, List, Generic, TypeVar, Optional, Sequence
 from datetime import datetime
 
-from loguru import logger
 from pydantic import Field, BaseModel
 from pydantic.generics import GenericModel
 from starlette.responses import JSONResponse
@@ -42,7 +41,7 @@ class ResponseCodeEnum(IntEnumMore):
 
 
 class AesResponse(JSONResponse):
-    """ "
+    """
     响应：
     res = {
         "code": 100200,
@@ -84,13 +83,8 @@ class Resp(GenericModel, Generic[DataT]):
     message: Optional[str] = Field(default=None, description="响应提示信息")
     data: Optional[DataT] = Field(default=None, description="响应数据格式")
 
-    def __init__(__pydantic_self__, **data: Any):
-        super().__init__(**data)
-        code = data.get("code")
-        if code:
-            logger.bind(json=True).warning(
-                {"code": code, "message": data.get("message")}
-            )
+    # def __init__(__pydantic_self__, **data: Any):
+    #     super().__init__(**data)
 
     # @validator("data", always=True)
     # def check_consistency(cls, v, values):

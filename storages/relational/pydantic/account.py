@@ -9,7 +9,7 @@ from common.encrypt import PasswordUtil
 from common.pydantic import optional
 from storages.relational.models import Account
 from storages.relational.pydantic.role import RoleList
-from storages.relational.pydantic.system import SystemList
+from storages.relational.pydantic.system import SystemListWithRoles
 
 # from storages.relational.pydantic.resource import ResourceLevelTreeNode
 
@@ -34,7 +34,7 @@ class AccountDetail(
 
 
 class AccountDetailWithResource(AccountDetail):
-    systems: List[SystemList] = Field([], description="系统列表")
+    systems: List[SystemListWithRoles] = Field([], description="系统列表")
     # resources: List[ResourceLevelTreeNode] = Field([], description="资源列表")
 
 

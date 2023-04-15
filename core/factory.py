@@ -10,11 +10,10 @@ from fastapi_cache.backends.redis import RedisBackend
 from sentry_sdk.integrations.redis import RedisIntegration
 
 from conf.config import LocalConfig, local_configs
-from core.loguru import init_loguru
+from common.loguru import init_loguru
 from common.fastapi import RespSchemaAPIRouter
 from storages.redis import AsyncRedisUtil, keys
 from common.responses import AesResponse
-from common.exceptions import ApiException
 from common.constant.tags import TagsEnum
 
 init_loguru()
@@ -42,9 +41,6 @@ def amount_apps(main_app: FastAPI):
 
 
 def setup_exception_handlers(main_app: FastAPI):
-    main_app.add_exception_handler(
-        ApiException, lambda request, err: err.to_result()
-    )
     from common.exceptions import roster
 
     for exc, handler in roster:

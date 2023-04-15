@@ -3,6 +3,7 @@ import ast
 import sys
 import logging
 import traceback
+from enum import Enum
 from types import FrameType
 from typing import cast
 from itertools import chain
@@ -11,19 +12,59 @@ from loguru import logger
 from gunicorn import glogging
 
 from conf.config import BASE_DIR, EnvironmentEnum, local_configs
+from common.types import StrEnumMore
 from common.utils import datetime_now, get_request_id
+from common.decorators import extend_enum
 
 LOG_LEVEL = logging.DEBUG if local_configs.PROJECT.DEBUG else logging.INFO
 
-# colorize log
-blue = "\x1b[38;5;39m"
-cyan = "\x1b[36m"
-green = "\x1b[32;20m"
-yellow = "\x1b[38;5;226m"
-red = "\x1b[38;5;196m"
-bold_red = "\x1b[31;1m"
-# reset = "\x1b[0m"
-no_color = "\033[0m"
+
+class LogLevelEnum(StrEnumMore):
+    CRITICAL = (logging.CRITICAL, "CRITICAL")
+    # FATAL = ("50", "FATAL")
+    ERROR = (logging.ERROR, "ERROR")
+    # WARN = ("30", "WARN")
+    WARNING = (logging.WARNING, "WARNING")
+    INFO = (logging.INFO, "INFO")
+    DEBUG = (logging.DEBUG, "DEBUG")
+    NOTSET = (logging.NOTSET, "NOTSET")
+
+
+class ColorEnum(str, Enum):
+    # colorize log
+    blue = "\x1b[38;5;39m"
+    cyan = "\x1b[36m"
+    green = "\x1b[32;20m"
+    yellow = "\x1b[38;5;226m"
+    red = "\x1b[38;5;196m"
+    bold_red = "\x1b[31;1m"
+    # reset = "\x1b[0m"
+    no_color = "\033[0m"
+
+
+class ChangableLoggerName(str, Enum):
+    root = "root"
+    fastaapi = "fastapi"
+    tortoise = "tortoise"
+
+
+DynamicLogLevelConfig = {}
+
+
+@extend_enum(ChangableLoggerName)
+class LoggerNameEnum(str, Enum):
+    gunicorn_error = "gunicorn.error"
+    gunicorn_asgi = "gunicorn.asgi"
+    gunicorn_gunicorn = "gunicorn.access"
+    uvicorn_error = "uvicorn.error"
+    uvicorn_asgi = "uvicorn.asgi"
+    uvicorn_access = "uvicorn.access"
+
+
+def to_int_level(level):
+    if level in LogLevelEnum.labels:
+        return LogLevelEnum.values[LogLevelEnum.labels.index(level)]
+    return int(level)
 
 
 class InterceptHandler(logging.Handler):
@@ -35,10 +76,15 @@ class InterceptHandler(logging.Handler):
         except ValueError:
             level = str(record.levelno)
 
+        # 动态日志级别, 涉及到进程、线程间共享字典，性能损耗大
+        # name = record.name
+        # if DynamicLogLevelConfig.get(name, to_int_level(LOG_LEVEL)) > to_int_level(level):
+        #     return
+
         if record.exc_info:
             # 异常日志处理
             if local_configs.PROJECT.DEBUG:
-                print(f"{bold_red}{traceback.format_exc()}")
+                print(f"{ColorEnum.bold_red.value}{traceback.format_exc()}")
             else:
                 # 保持日志一致性
                 tb = traceback.extract_tb(sys.exc_info()[2])
@@ -52,6 +98,7 @@ class InterceptHandler(logging.Handler):
         while frame.f_code.co_filename == logging.__file__:  # noqa: WPS609
             frame = cast(FrameType, frame.f_back)
             depth += 1
+
         logger.bind(request_id=get_request_id() or "").opt(
             depth=depth, exception=record.exc_info
         ).log(
@@ -68,29 +115,21 @@ def setup_loguru_logging_intercept(level=logging.DEBUG, modules=()):
         # mod_logger.propagate = False
 
 
-def serialize(record):
+def serialize(record: dict):
     """Serialize the JSON log."""
     log = {}
-
-    # https://docs.datadoghq.com/tracing/connect_logs_and_traces/python/
-    # span = ddtrace.tracer.current_span()
-    # trace_id, span_id = (span.trace_id, span.span_id) if span else (None, None)
-
-    # # add ids to structlog event dictionary
-    # log['dd.trace_id'] = str(trace_id or 0)
-    # log['dd.span_id'] = str(span_id or 0)
-    # log['dd.env'] = ddtrace.config.env or ""
-    # log['dd.service'] = ddtrace.config.service or ""
-    # log['dd.version'] = ddtrace.config.version or ""
-
-    log["time"] = record["time"].strftime("%Y:%m:%d %H:%M:%S %Z %z")
+    name = record["name"]
     log["level"] = record["level"].name
+    # 动态日志级别, 涉及到进程、线程间共享字典，性能损耗大
+    # if DynamicLogLevelConfig.get(name, to_int_level(LOG_LEVEL)) > to_int_level(log["level"]):
+    #         return
+    log["time"] = record["time"].strftime("%Y:%m:%d %H:%M:%S %Z %z")
     log["message"] = record["message"]
     if record["extra"].get("json"):
         # logger.bind(json=True).info()
         # dict/list or python object string convert
         log["message"] = ast.literal_eval(log["message"])
-    location = record["name"]
+    location = name
     log["name"] = location
     if record["function"]:
         location = f'{location}:{record["function"]}'
@@ -108,16 +147,32 @@ def json_sink(message):
 
     if local_configs.PROJECT.ENVIRONMENT == EnvironmentEnum.development.value:
         level_color = {
-            "TRACE": blue,
-            "DEBUG": cyan,
-            "INFO": green,
-            "SUCCESS": no_color,
-            "WARNING": yellow,
-            "ERROR": red,
-            "CRITICAL": bold_red,
+            "TRACE": ColorEnum.blue.value,
+            "DEBUG": ColorEnum.cyan.value,
+            "INFO": ColorEnum.green.value,
+            "SUCCESS": ColorEnum.no_color.value,
+            "WARNING": ColorEnum.yellow.value,
+            "ERROR": ColorEnum.red.value,
+            "CRITICAL": ColorEnum.bold_red.value,
         }
-        color = level_color.get(serialized["level"], no_color)
+        color = level_color.get(serialized["level"], ColorEnum.no_color.value)
     print(f"{color}{serialized}")
+
+
+class GunicornLogger(glogging.Logger):
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        LOGGING_MODULES = (
+            LoggerNameEnum.gunicorn_error.value,
+            LoggerNameEnum.gunicorn_asgi.value,
+            LoggerNameEnum.gunicorn_gunicorn.value,
+        )
+        setup_loguru_logging_intercept(
+            level=logging.getLevelName(LOG_LEVEL), modules=LOGGING_MODULES
+        )
+
+
+request_info_logger = logger.bind(name="request_info")
 
 
 def init_loguru():
@@ -151,11 +206,11 @@ def init_loguru():
     )
 
     UVICORN_LOGGING_MODULES = (
-        "uvicorn.error",
-        "uvicorn.asgi",
-        "uvicorn.access",
-        "fastapi",
-        "tortoise",
+        LoggerNameEnum.uvicorn_error.value,
+        LoggerNameEnum.uvicorn_asgi.value,
+        LoggerNameEnum.uvicorn_access.value,
+        LoggerNameEnum.fastaapi.value,
+        LoggerNameEnum.tortoise.value,
     )
 
     setup_loguru_logging_intercept(
@@ -163,18 +218,5 @@ def init_loguru():
     )
 
     # disable duplicate logging
-    logging.getLogger("root").handlers.clear()
+    logging.getLogger(LoggerNameEnum.root.value).handlers.clear()
     logging.getLogger("uvicorn").handlers.clear()
-
-
-class GunicornLogger(glogging.Logger):
-    def __init__(self, cfg):
-        super().__init__(cfg)
-        LOGGING_MODULES = (
-            "gunicorn.error",
-            "gunicorn.asgi",
-            "gunicorn.access",
-        )
-        setup_loguru_logging_intercept(
-            level=logging.getLevelName(LOG_LEVEL), modules=LOGGING_MODULES
-        )

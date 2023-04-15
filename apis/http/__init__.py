@@ -27,7 +27,7 @@ class HealthCheck(BaseModel):
 
 
 @http_app.get(
-    "/", tags=[TagsEnum.Root], summary="健康检查", response_model=Resp[HealthCheck]
+    "/", tags=[TagsEnum.root], summary="健康检查", response_model=Resp[HealthCheck]
 )
 async def index() -> Resp[HealthCheck]:
     return Resp[HealthCheck](
@@ -48,7 +48,7 @@ class UriItem(BaseModel):
     tags: List[Optional[str]]
 
 
-@http_app.get("/uri-list", tags=[TagsEnum.Root], summary="全部uri")
+@http_app.get("/uri-list", tags=[TagsEnum.root], summary="全部uri")
 def get_all_urls_from_request(request: Request) -> Resp[List[UriItem]]:
     url_list = []
     for route in request.app.routes:
