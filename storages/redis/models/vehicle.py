@@ -16,3 +16,8 @@ class Vehicle(HashModel):
         model_key_prefix = "Vehicle"
         database = AsyncRedisUtil.get_redis()
         # key_pattern = "{global_key_prefix}:{model_key_prefix}:{vin}"
+
+    # @root_validator
+    # def values_validate(cls, values):
+    #     ...
+    #     return values

@@ -123,7 +123,7 @@ def serialize(record: dict):
     # 动态日志级别, 涉及到进程、线程间共享字典，性能损耗大
     # if DynamicLogLevelConfig.get(name, to_int_level(LOG_LEVEL)) > to_int_level(log["level"]):
     #         return
-    log["time"] = record["time"].strftime("%Y:%m:%d %H:%M:%S %Z %z")
+    log["time"] = record["time"].strftime("%Y-%m-%d %H:%M:%S %Z %z")
     log["message"] = record["message"]
     if record["extra"].get("json"):
         # logger.bind(json=True).info()
