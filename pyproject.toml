@@ -33,6 +33,7 @@ typer = "0.7.0"
 aerich = "0.7.1"
 elasticsearch = { extras = ["async"], version = "7.8.0" }
 # strawberry-graphql = "0.165.1"
+redis-om = "0.1.2"
 
 [tool.poetry.dev-dependencies]
 # poetry install --no-dev

@@ -38,6 +38,8 @@ def shell():
         "print('System Ready!')",
         "from common.command.shell import init_ctx_db",
         "await init_ctx_db()",
+        "from storages.redis import AsyncRedisUtil",
+        "AsyncRedisUtil.init()",
     ]
     # DEBUG=10, INFO=20, WARN=30
     conf.InteractiveShellApp.log_level = 30

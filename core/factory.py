@@ -120,7 +120,7 @@ def setup_sentry(current_settings: LocalConfig):
 async def lifespan(app: FastAPI):
     # 初始化及退出清理
     # redis
-    await AsyncRedisUtil.init()
+    AsyncRedisUtil.init()
     # cache
     FastAPICache.init(
         RedisBackend(AsyncRedisUtil.get_redis()),
@@ -141,7 +141,7 @@ async def lifespan(app: FastAPI):
 #     @main_app.on_event("startup")
 #     async def init() -> None:
 #         # 初始化redis
-#         await AsyncRedisUtil.init()
+#         AsyncRedisUtil.init()
 #         # cache
 #         FastAPICache.init(RedisBackend(AsyncRedisUtil.get_redis()), prefix=f"{keys.RedisKeyPrefix}FastapiCache")
 

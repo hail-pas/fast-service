@@ -10,12 +10,12 @@ class AsyncRedisUtil:
     异步redis操作
     """
 
-    _pool: aioredis.ConnectionPool
-    _redis: aioredis.Redis
     _db: int = local_configs.REDIS.DB
+    _pool: aioredis.ConnectionPool = None
+    _redis: aioredis.Redis = None
 
     @classmethod
-    async def init(
+    def init(
         cls,
         host: str = local_configs.REDIS.HOST,
         port: int = local_configs.REDIS.PORT,
@@ -23,8 +23,19 @@ class AsyncRedisUtil:
         db: int = local_configs.REDIS.DB,
         **kwargs,
     ):
+        if cls._redis:
+            return cls._redis
         aioredis.from_url("redis://localhost")
-        conn = aioredis.Connection(
+
+        # conn = aioredis.Connection(
+        #     host=local_configs.REDIS.HOST,
+        #     port=local_configs.REDIS.PORT,
+        #     db=local_configs.REDIS.DB,
+        #     password=local_configs.REDIS.PASSWORD,
+        #     decode_responses=True,
+        #     encoding_errors="strict",
+        # )
+        cls._pool = aioredis.ConnectionPool(
             host=local_configs.REDIS.HOST,
             port=local_configs.REDIS.PORT,
             db=local_configs.REDIS.DB,
@@ -32,7 +43,6 @@ class AsyncRedisUtil:
             decode_responses=True,
             encoding_errors="strict",
         )
-        cls._pool = aioredis.ConnectionPool(conn)
         cls._redis = aioredis.Redis(connection_pool=cls._pool)
         return cls._redis
 
