@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from loguru import logger
 from fastapi import FastAPI, APIRouter
-from tortoise import Tortoise, connections
+from tortoise import Tortoise
 from fastapi_cache import FastAPICache
 from starlette.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -132,8 +132,9 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    await Tortoise.close_connections()
+    await FastAPICache.clear()
     await AsyncRedisUtil.close()
-    await connections.close_all()
 
 
 # def init_apps(main_app: FastAPI):
