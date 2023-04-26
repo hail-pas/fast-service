@@ -1,13 +1,11 @@
 import asyncio
-import logging
 from typing import Any
 
+from loguru import logger
 from fastapi import WebSocket
 from starlette.endpoints import WebSocketEndpoint
 
 from storages.redis import AsyncRedisUtil
-
-logger = logging.getLogger(__name__)
 
 
 class WebSocketTicks(WebSocketEndpoint):
@@ -17,9 +15,11 @@ class WebSocketTicks(WebSocketEndpoint):
         await websocket.accept()
         self.ticker_task = asyncio.create_task(self.tick(websocket))
         logger.info(
-            '%s - "WebSocket %s" [accepted]',
-            websocket.scope["client"],
-            websocket.scope["root_path"] + websocket.scope["path"],
+            '%s - "WebSocket %s" [accepted]'
+            % (
+                websocket.scope["client"],
+                websocket.scope["root_path"] + websocket.scope["path"],
+            )
         )
         await AsyncRedisUtil.incrby("total_ws_conn")
         logger.info(
@@ -31,9 +31,11 @@ class WebSocketTicks(WebSocketEndpoint):
     ) -> None:
         self.ticker_task.cancel()
         logger.info(
-            '%s - "WebSocket %s" [disconnected]',
-            websocket.scope["client"],
-            websocket.scope["root_path"] + websocket.scope["path"],
+            '%s - "WebSocket %s" [disconnected]'
+            % (
+                websocket.scope["client"],
+                websocket.scope["root_path"] + websocket.scope["path"],
+            )
         )
         await AsyncRedisUtil.incrby("total_ws_conn", -1)
 

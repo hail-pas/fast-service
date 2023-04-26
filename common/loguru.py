@@ -99,9 +99,12 @@ class InterceptHandler(logging.Handler):
             frame = cast(FrameType, frame.f_back)
             depth += 1
 
-        logger.bind(request_id=get_request_id() or "").opt(
-            depth=depth, exception=record.exc_info
-        ).log(
+        _logger = logger
+        request_id = get_request_id()
+        if request_id:
+            _logger = _logger.bind(request_id=request_id)
+
+        _logger.opt(depth=depth, exception=record.exc_info).log(
             level,
             record.getMessage(),
         )
