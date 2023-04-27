@@ -6,7 +6,7 @@ ProjectCode = local_configs.PROJECT.UNIQUE_CODE
 
 assert ProjectCode, "Must Define Unique Project Code as Redis Prefix"
 
-RedisKeyPrefix = ProjectCode + ":"
+RedisKeyPrefix = f"{ProjectCode}:"
 
 
 @unique
@@ -16,4 +16,5 @@ class RedisSearchIndexPrefix(str, Enum):
 
 @unique
 class RedisCacheKey(str, Enum):
-    RedisLockKey = RedisKeyPrefix + "RedisLock:{}"
+    RedisLockKey = RedisKeyPrefix + "RedisLock:{unique_key}"
+    TaskPramsKey = RedisKeyPrefix + "TaskPrams:{task_id}:{param_id}"

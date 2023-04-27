@@ -51,6 +51,11 @@ class IOrderEnum(StrEnumMore):
     descendent = ("descendent", "降序")
 
 
+class TaskTypeEnum(StrEnumMore):
+    scheduled = ("scheduled", "定时任务")
+    asynchronous = ("asynchronous", "异步任务")
+
+
 # ==================================================
 # 在该行上面新增 Enum 类
 # ==================================================

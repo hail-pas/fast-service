@@ -191,14 +191,6 @@ class Jwt(BaseModel):
     REFRESH_EXPIRATION_DELTA_DELTA_MINUTES: int = 4320
 
 
-class K8s(HostAndPort):
-    NAMESPACE: str = ""
-    IMAGE: str = ""
-    PVC_NAME: str = ""
-    CONFIG_FILE: Optional[str] = ""
-    CONFIG_MAP_NAME: Optional[str] = ""
-
-
 class ThirdApiConfig(HostAndPort):
     PROTOCOL: Literal["https", "http", "rpc"] = "https"
     TIMEOUT: int = 6
@@ -238,7 +230,7 @@ class LocalConfig(BaseSettings):
 
     KAFKA: Optional[Kafka]  # noqa
 
-    K8S: Optional[K8s]
+    # K8S: Optional[K8s]
 
     THIRD_API_CONFIGS: Optional[ThirdApiConfigs]
 

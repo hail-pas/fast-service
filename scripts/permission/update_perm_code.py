@@ -2,7 +2,7 @@ import asyncio
 
 from storages import enums
 from core.factory import app
-from common.command.shell import init_ctx_db
+from common.command.shell import init_ctx_relational
 from storages.relational.models.account import Permission
 
 
@@ -28,7 +28,7 @@ def get_url_list():
 
 
 async def update_or_creaete_perm_code():
-    await init_ctx_db()
+    await init_ctx_relational()
     url_list = get_url_list()
     latest_codes = []
     for url in url_list:

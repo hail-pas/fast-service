@@ -87,7 +87,7 @@ class AsyncRedisUtil:
 
     @classmethod
     async def set(cls, key, value, exp=None):
-        await cls._redis.set(key, value, expire=exp)
+        await cls._redis.set(key, value, ex=exp)
 
     @classmethod
     async def get(cls, key, default=None):

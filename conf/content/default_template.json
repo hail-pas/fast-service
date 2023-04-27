@@ -65,13 +65,8 @@
   //   "SERVERS": [
   //   ]
   // },
-  // "K8S": {
-  //   "CONFIG_FILE": "file_path",
-  //   "HOST": "localhost",
-  //   "NAMESPACE": "DjangoStartKit",
-  //   "IMAGE": "DjangoStartKit",
-  //   "PVC_NAME": "pvc_name",
-  //   "CONFIG_MAP_NAME": "config_map_name"
-  // },
+
+
+
   // "THIRD_API_CONFIGS": null
 }

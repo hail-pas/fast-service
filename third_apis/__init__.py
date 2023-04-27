@@ -1,4 +1,5 @@
 import abc
+import enum
 import string
 import asyncio
 from typing import Any, Set, List, Type, Optional
@@ -7,11 +8,23 @@ from functools import partial
 import httpx
 from loguru import logger
 
-from common.types import RequestMethodEnum
 from common.regexes import validate_ip_or_host, only_alphabetic_numeric
 
 DATA_SEND_WAYS = ["auto", "json", "params", "data"]
 PROTOCOLS = ["http", "https"]
+
+
+@enum.unique
+class RequestMethodEnum(enum.Enum):
+    GET = "get"
+    POST = "post"
+    PUT = "put"
+    PATCH = "patch"
+    DELETE = "delete"
+    # OPTIONS = "options"
+    # HEAD = "head"
+    # CONNECT = "connect"
+    # TRACE = "trace"
 
 
 class Response:

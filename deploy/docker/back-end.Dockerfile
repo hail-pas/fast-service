@@ -1,6 +1,7 @@
 # docker build --build-arg BASE_IMAGE="" -build-arg ENVIRONMENT=""
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
+ENV base_image ${BASE_IMAGE}
 # optional environment: development、test、production;  From 为变量作用域
 ARG ENVIRONMENT
 ENV environment ${ENVIRONMENT}
