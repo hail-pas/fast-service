@@ -8,11 +8,8 @@ from typing import Optional, Tuple, Union
 import uuid
 
 from conf.config import local_configs
-from third_apis.k8s import client, batch_v1_api, JobConfig, CronJobConfig, NAMESPACE
+from third_apis.k8s import client, batch_v1_api, JobConfig, CronJobConfig, NAMESPACE, JOB_TEMPLATE, CRONJOB_TEMPLATE
 from storages.enums import TaskTypeEnum
-
-JOB_TEMPLATE = "third_apis/k8s/templates/job_template.yaml"
-CRONJOB_TEMPLATE = "third_apis/k8s/templates/cronjob_template.yaml"
 
 
 class UsageError(Exception):
