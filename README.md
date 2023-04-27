@@ -12,6 +12,7 @@ micro service based on FastApi
 ## third_apis 外部服务模块
 ## common 通用模块
 ## tests 测试模块
+## tasks k8s job 和 cronjob 模块
 
 # Pre-Commit
 ```shell
