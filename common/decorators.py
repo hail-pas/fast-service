@@ -22,7 +22,7 @@ def partial(func, *args):
     return new_func
 
 
-def timelimit(timeout: Union[int, float, str]):
+def timelimit(timeout: Union[int, float]):
     """
     A decorator to limit a function to `timeout` seconds, raising `TimeoutError`
     if it takes longer.

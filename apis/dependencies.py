@@ -2,7 +2,7 @@ import time
 from typing import Optional, Annotated
 from urllib.parse import unquote
 
-from jose import jwt
+from jose import ExpiredSignatureError
 from loguru import logger
 from fastapi import Query, Header, Depends, Security
 from pydantic import PositiveInt
@@ -134,7 +134,7 @@ async def token_required(
                 code=ResponseCodeEnum.unauthorized.value,
                 message=AuthorizationHeaderInvalidMsg,
             )
-    except jwt.ExpiredSignatureError:
+    except ExpiredSignatureError:
         raise ApiException(
             code=ResponseCodeEnum.unauthorized.value, message=TokenExpiredMsg
         )

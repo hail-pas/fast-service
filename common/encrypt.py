@@ -25,7 +25,7 @@ class AESUtil:
         self.style = style
         self.key = base64.b64decode(key.encode())
 
-    def encrypt_data(self, data: str):
+    def encrypt_data(self, data: str) -> str:
         data = data.encode()
         aes = AES.new(self.key, self.mode)
         pad_data = pad(data, AES.block_size, style=self.style)
@@ -33,7 +33,7 @@ class AESUtil:
             base64.encodebytes(aes.encrypt(pad_data)), encoding="utf8"
         ).replace("\n", "")
 
-    def decrypt_data(self, data: str):
+    def decrypt_data(self, data: str) -> str:
         data = data.encode()
         aes = AES.new(self.key, self.mode)
         pad_data = pad(data, AES.block_size, style=self.style)
@@ -56,9 +56,7 @@ class RSAUtil:
     RSA 加密 签名
     """
 
-    def __init__(
-        self, pub_key_path: str, private_key_path: str, password: str
-    ):
+    def __init__(self, pub_key_path: str, private_key_path: str, password):
         self.password = password
         with open(private_key_path, "rb") as f:
             self.private_key = f.read()
@@ -172,7 +170,7 @@ class HashUtilB64:
         sha1加密，base64编码
         """
         return base64.b64encode(
-            hashlib.sha1(s.encode(encoding="utf-8"))
+            hashlib.sha1(s.encode(encoding="utf-8")).digest()
         ).decode("utf-8")
 
 
