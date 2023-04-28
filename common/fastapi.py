@@ -283,15 +283,13 @@ def setup_sub_app(app: FastAPI, app_prefix: str):
     app.router.route_class = RespSchemaAPIRouter
     app.logger = logger
     setup_exception_handlers(app)
-    app.servers = [
-        {
-            "url": f"http://127.0.0.1:{local_configs.SERVER.PORT}/{app_prefix}",
-            "description": "Development environment",
-        },
-    ]
     for server in local_configs.PROJECT.SWAGGER_SERVERS or []:
-        server["url"] = f"{server['url']}/{app_prefix}"
-        app.servers.append(server)
+        app.servers.append(
+            {
+                "url": f"{server['url']}/{app_prefix}",
+                "description": server["description"],
+            }
+        )
     app.debug = local_configs.PROJECT.DEBUG
     app.default_response_class = AesResponse
     app.version = local_configs.PROJECT.VERSION
