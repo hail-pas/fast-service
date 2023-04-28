@@ -9,6 +9,12 @@ micro service based on FastApi
 ## scripts 脚本模块
 ## storages 存储模块
 ## apis 功能模块
+    - graphql
+    - http
+        - version control
+        - sub app
+    - websocket
+    - grpc
 ## third_apis 外部服务模块
 ## common 通用模块
 ## tests 测试模块
