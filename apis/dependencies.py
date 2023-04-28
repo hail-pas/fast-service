@@ -4,10 +4,14 @@ from urllib.parse import unquote
 
 from jose import jwt
 from loguru import logger
-from fastapi import Query, Header, Depends
+from fastapi import Query, Header, Depends, Security
 from pydantic import PositiveInt
 from tortoise.models import Model
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import (
+    HTTPBearer,
+    APIKeyHeader,
+    HTTPAuthorizationCredentials,
+)
 from starlette.requests import Request
 from fastapi.security.utils import get_authorization_scheme_param
 
@@ -21,6 +25,8 @@ from common.exceptions import ApiException
 from common.constant.messages import (
     JsonRequiredMsg,
     TokenExpiredMsg,
+    ApikeyInvalidMsg,
+    ApikeyMissingMsg,
     SignCheckErrorMsg,
     BrokenAccessControl,
     TimestampExpiredMsg,
@@ -159,6 +165,26 @@ async def token_required(
     request.scope["role"] = role
     request.scope["user"] = account
     return account
+
+
+async def api_key_required(
+    request: Request,
+    api_key: str = Security(
+        APIKeyHeader(
+            name="x-api-key", scheme_name="API key header", auto_error=False
+        )
+    ),
+):
+    if not api_key:
+        raise ApiException(
+            message=ApikeyMissingMsg, code=ResponseCodeEnum.unauthorized.value
+        )
+    if api_key == local_configs.PROJECT.API_KEY:
+        return api_key
+
+    raise ApiException(
+        message=ApikeyInvalidMsg, code=ResponseCodeEnum.unauthorized.value
+    )
 
 
 # depends on token_required

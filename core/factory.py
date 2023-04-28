@@ -14,6 +14,7 @@ from common.loguru import init_loguru
 from common.fastapi import RespSchemaAPIRouter
 from storages.redis import AsyncRedisUtil, keys
 from common.responses import AesResponse
+from common.exceptions import setup_exception_handlers
 from common.constant.tags import TagsEnum
 
 init_loguru()
@@ -38,13 +39,6 @@ def amount_apps(main_app: FastAPI):
             main_app.mount(prefix_path, app_or_router, name)
         elif isinstance(app_or_router, APIRouter):
             main_app.include_router(app_or_router)
-
-
-def setup_exception_handlers(main_app: FastAPI):
-    from common.exceptions import roster
-
-    for exc, handler in roster:
-        main_app.add_exception_handler(exc, handler)
 
 
 def setup_middleware(main_app: FastAPI):
@@ -154,20 +148,6 @@ async def lifespan(app: FastAPI):
 
 def create_app(current_settings: LocalConfig):
     main_app = MainApp(
-        servers=[
-            {
-                "url": f"http://127.0.0.1:{local_configs.SERVER.PORT}",
-                "description": "Development environment",
-            },
-            {
-                "url": "http://test.example.com",
-                "description": "Test environment",
-            },
-            {
-                "url": "http://prod.example.com",
-                "description": "Production environment",
-            },
-        ],
         debug=current_settings.PROJECT.DEBUG,
         title=current_settings.PROJECT.NAME,
         description=current_settings.PROJECT.DESCRIPTION,
@@ -185,6 +165,12 @@ def create_app(current_settings: LocalConfig):
     )
     main_app.router.route_class = RespSchemaAPIRouter
     main_app.logger = logger
+    main_app.servers = [
+        {
+            "url": f"http://127.0.0.1:{local_configs.SERVER.PORT}",
+            "description": "Development environment",
+        },
+    ] + local_configs.PROJECT.SWAGGER_SERVERS or []
     # thread local just flask like g
     # main_app.add_middleware(GlobalsMiddleware)
     # 挂载apps下的路由 以及 静态资源路由

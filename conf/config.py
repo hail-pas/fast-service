@@ -150,8 +150,8 @@ class Project(BaseModel):
     DEBUG: bool = False
     ENVIRONMENT: str = EnvironmentEnum.production.value
     LOG_DIR: str = "logs/"
-    SKYWALKINGT_SERVER: Optional[str] = None
     SENTRY_DSN: Optional[str] = None
+    SWAGGER_SERVERS: list[dict] = []
 
     @validator("ENVIRONMENT", allow_reuse=True)
     def check_if_environment_in(cls, v):  # noqa

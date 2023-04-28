@@ -11,3 +11,8 @@ class TagsEnum(StrEnumMore):
     resource = ("Resource", "资源管理")
     # >> 新增tag
     other = ("Other", "其他")
+
+
+class OuterAppTagsEnum(StrEnumMore):
+    ping = ("Ping", "Ping")
+    # >> 新增tag

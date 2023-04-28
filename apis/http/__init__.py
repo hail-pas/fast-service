@@ -12,11 +12,11 @@ from common.responses import Resp
 from apis.http.routes.v1 import v1_routes
 from common.constant.tags import TagsEnum
 
-http_app = APIRouter(route_class=RespSchemaAPIRouter)
+http_routes = APIRouter(route_class=RespSchemaAPIRouter)
 
 # mount apis
 # v1
-http_app.include_router(v1_routes)
+http_routes.include_router(v1_routes)
 
 
 class HealthCheck(BaseModel):
@@ -26,7 +26,7 @@ class HealthCheck(BaseModel):
     description: Optional[str]
 
 
-@http_app.get(
+@http_routes.get(
     "/", tags=[TagsEnum.root], summary="健康检查", response_model=Resp[HealthCheck]
 )
 async def index() -> Resp[HealthCheck]:
@@ -48,7 +48,7 @@ class UriItem(BaseModel):
     tags: List[Optional[str]]
 
 
-@http_app.get("/uri-list", tags=[TagsEnum.root], summary="全部uri")
+@http_routes.get("/uri-list", tags=[TagsEnum.root], summary="全部uri")
 def get_all_urls_from_request(request: Request) -> Resp[List[UriItem]]:
     url_list = []
     for route in request.app.routes:

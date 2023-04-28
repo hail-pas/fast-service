@@ -2,6 +2,7 @@ from typing import Optional
 
 import ujson
 from loguru import logger
+from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 from starlette.exceptions import HTTPException
@@ -108,3 +109,10 @@ roster = [
     (HTTPException, http_exception_handler),
     (Exception, unexpected_exception_handler),
 ]
+
+
+def setup_exception_handlers(main_app: FastAPI):
+    from common.exceptions import roster
+
+    for exc, handler in roster:
+        main_app.add_exception_handler(exc, handler)

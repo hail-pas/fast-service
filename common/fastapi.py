@@ -4,7 +4,8 @@ import email.message
 from typing import Any, Dict, Type, Union, Callable, Optional, Coroutine
 from contextlib import AsyncExitStack
 
-from fastapi import params
+from loguru import logger
+from fastapi import FastAPI, params
 from fastapi.utils import is_body_allowed_for_status_code
 from fastapi.routing import (
     APIRoute,
@@ -25,10 +26,13 @@ from pydantic.error_wrappers import ErrorWrapper, ValidationError
 from fastapi.dependencies.utils import solve_dependencies
 from fastapi.dependencies.models import Dependant
 
-from common.responses import Resp, PageResp
+from common.responses import Resp, PageResp, AesResponse
+from common.exceptions import setup_exception_handlers
 
 
 class AuthorizedRequest(Request):
+    """add additional attributes to request"""
+
     from storages.relational.models import Role, Account
 
     @property
@@ -271,3 +275,24 @@ class RespSchemaAPIRouter(APIRoute):
             response_model_exclude_none=self.response_model_exclude_none,
             dependency_overrides_provider=self.dependency_overrides_provider,
         )
+
+
+def setup_sub_app(app: FastAPI, app_prefix: str):
+    from conf.config import local_configs
+
+    app.router.route_class = RespSchemaAPIRouter
+    app.logger = logger
+    setup_exception_handlers(app)
+    app.servers = [
+        {
+            "url": f"http://127.0.0.1:{local_configs.SERVER.PORT}/{app_prefix}",
+            "description": "Development environment",
+        },
+    ]
+    for server in local_configs.PROJECT.SWAGGER_SERVERS or []:
+        server["url"] = f"{server['url']}/{app_prefix}"
+        app.servers.append(server)
+    app.debug = local_configs.PROJECT.DEBUG
+    app.default_response_class = AesResponse
+    app.version = local_configs.PROJECT.VERSION
+    return app
