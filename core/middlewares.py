@@ -3,7 +3,6 @@ import time
 from loguru import logger
 from fastapi import Response
 from starlette.requests import Request
-from starlette.concurrency import iterate_in_threadpool
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
     RequestResponseEndpoint,
@@ -13,39 +12,28 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from conf.config import local_configs
 from common.utils import get_or_set_request_id
-from common.loguru import InfoLoggerNameEnum
-from common.responses import ResponseCodeEnum
+from common.loguru import log_info_request
 
 
 # 执行顺序：从上到下
-async def add_process_time_header(
+async def base_request_middleware(
     request: Request, call_next: RequestResponseEndpoint
 ):
     start_time = time.time()
+    request_id = get_or_set_request_id()
+    with logger.contextualize(request_id=request_id):
+        # 请求id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
 
-    response = await call_next(request)
+        # 请求处理时间
+        process_time = time.time() - start_time
+        response.headers["X-Process-Time"] = str(int(process_time * 1000))
 
-    # 请求处理时间
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(int(process_time * 1000))
+        # 请求相关信息
+        await log_info_request(request, response)
 
-    # 请求相关信息
-    response_code = response.headers["x-response-code"]
-    info_dict = {
-        "method": request.method,
-        "url": request.url.path,
-        # "request_id": get_request_id(),
-        "process_time": response.headers["X-Process-Time"],
-    }
-    if response_code != str(ResponseCodeEnum.success.value):
-        response_body = [chunk async for chunk in response.body_iterator]
-        response.body_iterator = iterate_in_threadpool(iter(response_body))
-        info_dict["response_data"] = response_body[0].decode("utf-8")
-    logger.bind(
-        name=InfoLoggerNameEnum.info_request_logger.value, json=True
-    ).info(info_dict)
-
-    return response
+        return response
 
 
 class LoggingReqRespMiddleware(BaseHTTPMiddleware):
@@ -54,24 +42,17 @@ class LoggingReqRespMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
+        # 未使用
+
         # logger.info()  # 请求内容
         response = await call_next(request)
         # logger.info(response)
         return response  # 响应内容
 
 
-async def request_id_middleware(request, call_next):
-    request_id = get_or_set_request_id()
-    with logger.contextualize(request_id=request_id):
-        response = await call_next(request)
-        response.headers["X-Request-ID"] = request_id
-        return response
-
-
 roster = [
     # Middleware Func
-    add_process_time_header,
-    request_id_middleware,
+    base_request_middleware,
     # Middleware Class
     [
         CORSMiddleware,

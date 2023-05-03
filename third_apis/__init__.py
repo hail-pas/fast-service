@@ -328,11 +328,11 @@ class Third(APIBaseConfig):
             async with httpx.AsyncClient() as client:
                 raw_response = await client.request(**request_kwargs)
         except Exception as e:
-            logger.error(f"request failed: {e}")
-            logger.warning(
+            logger.bind(json=True).error(
                 {
                     "Trigger": f"Third-{self.name}",
                     "request_context": request_context,
+                    "request_error": repr(e),
                     "raw_response": None,
                 }
             )
@@ -344,21 +344,17 @@ class Third(APIBaseConfig):
             )
         else:
             try:
-                logger.debug(
-                    {
-                        "Trigger": f"Third-{self.name}",
-                        "request_context": request_context,
-                        "response": raw_response.json(),
-                    }
-                )
+                response = raw_response.json()
             except Exception:
-                logger.debug(
-                    {
-                        "Trigger": f"Third-{self.name}",
-                        "request_context": request_context,
-                        "response": raw_response.text,
-                    }
-                )
+                response = raw_response.text
+
+            logger.debug(
+                {
+                    "Trigger": f"Third-{self.name}",
+                    "request_context": request_context,
+                    "response": response,
+                }
+            )
 
             return self.parse_response(
                 api,

@@ -68,9 +68,7 @@ def setup_middleware(main_app: FastAPI):
                         f"Require Class, But Got {type(middle_fc[0])}"
                     )
         except Exception as e:
-            logger.exception(
-                f"Set Middleware Failed: {middle_fc}, Encounter {e}"
-            )
+            logger.error(f"Set Middleware Failed: {middle_fc}, Encounter {e}")
 
 
 def setup_static_app(main_app: FastAPI, current_settings: LocalConfig):

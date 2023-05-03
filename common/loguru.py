@@ -10,11 +10,14 @@ from typing import cast
 from itertools import chain
 
 from loguru import logger
+from fastapi import Request, Response
 from gunicorn import glogging
+from starlette.concurrency import iterate_in_threadpool
 
 from conf.config import BASE_DIR, EnvironmentEnum, local_configs
 from common.types import StrEnumMore
 from common.utils import datetime_now, get_request_id
+from common.responses import ResponseCodeEnum
 from common.decorators import extend_enum
 
 LOG_LEVEL = logging.DEBUG if local_configs.PROJECT.DEBUG else logging.INFO
@@ -82,28 +85,32 @@ class InterceptHandler(logging.Handler):
         # if DynamicLogLevelConfig.get(name, to_int_level(LOG_LEVEL)) > to_int_level(level):
         #     return
 
+        _logger = logger
+        request_id = get_request_id()
+        if request_id:
+            _logger = _logger.bind(request_id=request_id)
+
         if record.exc_info:
             # 异常日志处理
             if local_configs.PROJECT.DEBUG:
-                print(f"{ColorEnum.bold_red.value}{traceback.format_exc()}")
+                print(
+                    f"{ColorEnum.bold_red.value}{traceback.format_exc()}{request_id}"
+                )
             else:
                 # 保持日志一致性
                 tb = traceback.extract_tb(sys.exc_info()[2])
                 # 获取最后一个堆栈帧的文件名和行号
                 file_name, line_num, func_name, code_str = tb[-1]
                 location = f"{file_name}:{func_name}:{line_num}"
-                logger.bind(location=location).critical(traceback.format_exc())
+                _logger.bind(location=location).critical(
+                    traceback.format_exc()
+                )
             return
 
         frame, depth = logging.currentframe(), 2
         while frame.f_code.co_filename == logging.__file__:  # noqa: WPS609
             frame = cast(FrameType, frame.f_back)
             depth += 1
-
-        _logger = logger
-        request_id = get_request_id()
-        if request_id:
-            _logger = _logger.bind(request_id=request_id)
 
         _logger.opt(depth=depth, exception=record.exc_info).log(
             level,
@@ -176,9 +183,6 @@ class GunicornLogger(glogging.Logger):
         )
 
 
-request_info_logger = logger.bind(name="request_info")
-
-
 def init_loguru():
     # loguru
     logger.remove()
@@ -232,3 +236,22 @@ class InfoLoggerNameEnum(StrEnumMore):
 
     # 请求相关日志
     info_request_logger = ("_info.request", "请求数据统计日志")
+
+
+async def log_info_request(request: Request, response: Response):
+    # 请求相关信息
+    info_dict = {
+        "method": request.method,
+        "url": request.url.path,
+        # "request_id": get_request_id(),
+        "process_time": response.headers["X-Process-Time"],
+    }
+    response_code = response.headers.get("x-response-code")
+    if response_code and response_code != str(ResponseCodeEnum.success.value):
+        response_body = [chunk async for chunk in response.body_iterator]
+        response.body_iterator = iterate_in_threadpool(iter(response_body))
+        info_dict["response_data"] = response_body[0].decode("utf-8")
+
+    logger.bind(
+        name=InfoLoggerNameEnum.info_request_logger.value, json=True
+    ).info(info_dict)

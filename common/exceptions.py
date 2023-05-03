@@ -62,6 +62,7 @@ async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ):
     """参数校验错误"""
+    logger.bind(json=True, name="validation_exception_handler").info(exc.body)
     try:
         error = exc.raw_errors[0]
         error_exc = error.exc
