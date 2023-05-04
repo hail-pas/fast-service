@@ -37,18 +37,25 @@ class AuthorizedRequest(Request):
 
     from storages.relational.models import Role, Account
 
+    def __init__(self, request: Request):
+        super().__init__(
+            scope=request.scope,
+            receive=request._receive,
+            send=request._send,
+        )
+
     @property
     def account(self) -> Account:
         assert (
             "user" in self.scope
-        ), "AuthenticationMiddleware must be installed to access request.account"
+        ), "Authentication Dependency must be installed to access request.account"
         return self.scope["user"]
 
     @property
     def role(self) -> Role:
         assert (
             "role" in self.scope
-        ), "AuthenticationMiddleware must be installed to access request.role"
+        ), "Authentication Dependency must be installed to access request.role"
         return self.scope["role"]
 
 
@@ -151,6 +158,7 @@ class RespSchemaAPIRouter(APIRoute):
                 actual_response_class = response_class
 
             async def app(request: Request) -> Response:
+                request = AuthorizedRequest(request)
                 try:
                     body: Any = None
                     if body_field:
