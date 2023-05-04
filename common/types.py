@@ -148,8 +148,15 @@ class JwtPayload(BaseModel):
     expired_at: datetime
 
 
-REQUEST_ID_CTX_KEY = "request_id"
+@enum.unique
+class ContextKeyEnum(StrEnumMore):
+    """
+    上下文变量key
+    """
+
+    REQUEST_ID = ("request_id", "请求ID")
+
 
 request_id_ctx_var: ContextVar[str] = ContextVar(
-    REQUEST_ID_CTX_KEY, default=None
+    ContextKeyEnum.REQUEST_ID.value, default=None
 )
