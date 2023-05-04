@@ -22,9 +22,14 @@ async def add_process_time_header(
     request: Request, call_next: RequestResponseEndpoint
 ):
     start_time = time.time()
+
     response = await call_next(request)
+
+    # 请求处理时间
     process_time = time.time() - start_time
     response.headers["X-Process-Time"] = str(int(process_time * 1000))
+
+    # 请求相关信息
     response_code = response.headers["x-response-code"]
     info_dict = {
         "method": request.method,
@@ -39,6 +44,7 @@ async def add_process_time_header(
     logger.bind(
         name=InfoLoggerNameEnum.info_request_logger.value, json=True
     ).info(info_dict)
+
     return response
 
 

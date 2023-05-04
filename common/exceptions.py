@@ -37,15 +37,6 @@ async def api_exception_handler(request: Request, exc: ApiException):
 
 
 async def unexpected_exception_handler(request: Request, exc: Exception):
-    logger.bind(json=True).info(
-        {
-            "request_form": dict(await request.form()),
-            # "request_body": await request.json(),
-            "request_path_params": request.path_params,
-            "request_query_params": request.query_params._dict,
-            "request_headers": dict(request.headers),
-        }
-    )
     return AesResponse(
         content={
             "code": ResponseCodeEnum.internal_error.value,
