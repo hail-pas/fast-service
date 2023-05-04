@@ -5,6 +5,8 @@ import os
 import ujson
 
 from common.command.shell import init_ctx
+from common.fastapi import setup_sentry
+from conf.config import local_configs
 from storages.redis import AsyncRedisUtil
 from storages.redis.keys import RedisCacheKey
 from storages.relational.models import Task
@@ -13,6 +15,7 @@ from storages.relational.models import Task
 async def run_task(task_id: str, param_id: str):
     # init context
     await init_ctx()
+    setup_sentry(local_configs) # sentry
 
     # retrieve params and clear params
     key = RedisCacheKey.TaskPramsKey.format(task_id=task_id, param_id=param_id)

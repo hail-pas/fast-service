@@ -7,11 +7,10 @@ from fastapi_cache import FastAPICache
 from starlette.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi_cache.backends.redis import RedisBackend
-from sentry_sdk.integrations.redis import RedisIntegration
 
 from conf.config import LocalConfig, local_configs
 from common.loguru import init_loguru
-from common.fastapi import RespSchemaAPIRouter
+from common.fastapi import RespSchemaAPIRouter, setup_sentry
 from storages.redis import AsyncRedisUtil, keys
 from common.responses import AesResponse
 from common.exceptions import setup_exception_handlers
@@ -88,25 +87,6 @@ def setup_static_app(main_app: FastAPI, current_settings: LocalConfig):
         path=local_configs.SERVER.STATIC_PATH,
         app=static_files_app,
         name="static",
-    )
-
-
-def setup_sentry(current_settings: LocalConfig):
-    """
-    init sentry
-    :param current_settings:
-    :return:
-    """
-    import sentry_sdk
-
-    sentry_sdk.init(
-        dsn=current_settings.PROJECT.SENTRY_DSN,
-        environment=current_settings.PROJECT.ENVIRONMENT,
-        integrations=[RedisIntegration()],
-        traces_sample_rate=0.2,
-        _experiments={
-            "profiles_sample_rate": 0.1,
-        },
     )
 
 

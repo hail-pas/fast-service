@@ -25,7 +25,9 @@ from fastapi.datastructures import Default, DefaultPlaceholder
 from pydantic.error_wrappers import ErrorWrapper, ValidationError
 from fastapi.dependencies.utils import solve_dependencies
 from fastapi.dependencies.models import Dependant
+from sentry_sdk.integrations.redis import RedisIntegration
 
+from conf.config import LocalConfig
 from common.responses import Resp, PageResp, AesResponse
 from common.exceptions import setup_exception_handlers
 
@@ -294,3 +296,22 @@ def setup_sub_app(app: FastAPI, app_prefix: str):
     app.default_response_class = AesResponse
     app.version = local_configs.PROJECT.VERSION
     return app
+
+
+def setup_sentry(current_settings: LocalConfig):
+    """
+    init sentry
+    :param current_settings:
+    :return:
+    """
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=current_settings.PROJECT.SENTRY_DSN,
+        environment=current_settings.PROJECT.ENVIRONMENT,
+        integrations=[RedisIntegration()],
+        traces_sample_rate=0.2,
+        _experiments={
+            "profiles_sample_rate": 0.1,
+        },
+    )

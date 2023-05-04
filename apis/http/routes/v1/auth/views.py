@@ -133,6 +133,8 @@ def inner_register_callback(
     callbacks=inner_account_register_callback_router.routes,
 )
 async def inner_register(
-    register_in: AccountCreate, callback_host: str
+    register_in: AccountCreate,
+    callback_host: str
+    # callback_url: Union[HttpUrl, None]
 ) -> SimpleSuccess:
     return SimpleSuccess()

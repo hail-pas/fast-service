@@ -106,6 +106,7 @@ class Redis(HostAndPort):
     USERNAME: Optional[str] = None
     PASSWORD: Optional[str] = None
     DB: int = 0
+    MAX_CONNECTIONS: int = 20
 
 
 class Oss(BaseModel):

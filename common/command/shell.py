@@ -12,7 +12,7 @@ async def init_ctx_relational():
 async def init_ctx_redis():
     from storages.redis import AsyncRedisUtil
 
-    AsyncRedisUtil.init()
+    AsyncRedisUtil.init(single_connection_client=True)
 
 
 async def init_ctx():

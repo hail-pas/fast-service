@@ -19,13 +19,15 @@ class AsyncRedisUtil:
         cls,
         host: str = local_configs.REDIS.HOST,
         port: int = local_configs.REDIS.PORT,
+        username: Optional[str] = local_configs.REDIS.USERNAME,
         password: Optional[str] = local_configs.REDIS.PASSWORD,
         db: int = local_configs.REDIS.DB,
+        max_connections: int = local_configs.REDIS.MAX_CONNECTIONS,
+        single_connection_client: bool = True,
         **kwargs,
     ):
         if cls._redis:
             return cls._redis
-        aioredis.from_url("redis://localhost")
 
         # conn = aioredis.Connection(
         #     host=local_configs.REDIS.HOST,
@@ -36,14 +38,20 @@ class AsyncRedisUtil:
         #     encoding_errors="strict",
         # )
         cls._pool = aioredis.ConnectionPool(
-            host=local_configs.REDIS.HOST,
-            port=local_configs.REDIS.PORT,
-            db=local_configs.REDIS.DB,
-            password=local_configs.REDIS.PASSWORD,
+            host=host,
+            port=port,
+            db=db,
+            username=username,
+            password=password,
+            max_connections=max_connections,
             decode_responses=True,
             encoding_errors="strict",
         )
-        cls._redis = aioredis.Redis(connection_pool=cls._pool)
+        cls._redis = aioredis.Redis(
+            connection_pool=cls._pool,
+            single_connection_client=single_connection_client,
+            **kwargs,
+        )
         return cls._redis
 
     @classmethod
