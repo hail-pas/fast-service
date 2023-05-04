@@ -8,7 +8,7 @@ from pydantic.generics import GenericModel
 from starlette.responses import JSONResponse
 
 from common.types import IntEnumMore
-from common.utils import DATETIME_FORMAT_STRING, datetime_now
+from common.utils import DATETIME_FORMAT_STRING, datetime_now, get_request_id
 from common.schemas import Pager
 from common.pydantic import DateTimeFormatConfig
 from common.constant.messages import (
@@ -62,6 +62,7 @@ class AesResponse(JSONResponse):
         content["responseTime"] = datetime_now().strftime(
             DATETIME_FORMAT_STRING
         )
+        content["traceId"] = get_request_id()
         # if not get_settings().DEBUG:
         #     content = AESUtil(local_configs.AES.SECRET).encrypt_data(ujson.dumps(content))
         return super(AesResponse, self).render(content)
