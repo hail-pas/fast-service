@@ -48,6 +48,7 @@ class AesResponse(JSONResponse):
         "responseTime": "datetime",
         "message": "message",  # 当code不等于100200表示业务错误，该字段返回错误信息
         "data": "data"    # 当code等于100200表示正常调用，该字段返回正常结果
+        "traceId": "traceId"  # 请求唯一标识
         }
     不直接使用该Response， 使用下面的响应Model - 具有校验/生成文档的功能
     """
@@ -55,7 +56,13 @@ class AesResponse(JSONResponse):
     def __init__(
         self, content: Any = None, status_code: int = 200, **kwargs: Any
     ):
-        super().__init__(content, status_code=status_code, **kwargs)
+        headers = kwargs.pop("headers", {})
+        headers["x-response-code"] = str(
+            content.get("code", ResponseCodeEnum.success.value)
+        )
+        super().__init__(
+            content, status_code=status_code, headers=headers, **kwargs
+        )
 
     def render(self, content: Any) -> bytes:
         # update responseTime
@@ -83,6 +90,7 @@ class Resp(GenericModel, Generic[DataT]):
     responseTime: datetime = Field(default=None, description="响应时间")
     message: Optional[str] = Field(default=None, description="响应提示信息")
     data: Optional[DataT] = Field(default=None, description="响应数据格式")
+    traceId: Optional[str] = Field(default=None, description="请求唯一标识")
 
     # def __init__(__pydantic_self__, **data: Any):
     #     super().__init__(**data)

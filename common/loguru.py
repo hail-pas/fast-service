@@ -1,6 +1,7 @@
 import os
 import ast
 import sys
+import enum
 import logging
 import traceback
 from enum import Enum
@@ -223,3 +224,11 @@ def init_loguru():
     # disable duplicate logging
     logging.getLogger(LoggerNameEnum.root.value).handlers.clear()
     logging.getLogger("uvicorn").handlers.clear()
+
+
+@enum.unique
+class InfoLoggerNameEnum(StrEnumMore):
+    """统计数据相关日志名称."""
+
+    # 请求相关日志
+    info_request_logger = ("_info.request", "请求数据统计日志")
