@@ -2,24 +2,7 @@ import enum
 import time
 import unittest
 
-from common.decorators import partial, timelimit, extend_enum
-
-
-def test_partial():
-    def func(a, b, c):
-        return a + b + c
-
-    # 测试正常情况
-    new_func = partial(func, 1, 2)
-    assert new_func(3) == 6
-
-    # 测试传入更多的参数
-    new_func = partial(func, 1)
-    assert new_func(2, 3) == 6
-
-    # 测试传入更少的参数
-    new_func = partial(func, 1, 2, 3)
-    assert new_func() == 6
+from common.decorators import timelimit, extend_enum
 
 
 class TestTimeLimitDecorator(unittest.TestCase):

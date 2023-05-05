@@ -9,17 +9,15 @@ from common.types import _classproperty
 classproperty = _classproperty
 
 
-def partial(func, *args):
-    """
-    保留函数签名的partial装饰器
-    """
+class SingletonDecorator:
+    def __init__(self, cls):
+        self.cls = cls
+        self.instance = None
 
-    def new_func(*func_args):
-        return func(*(args + func_args))
-
-    new_func.func = func
-    new_func.args = args
-    return new_func
+    def __call__(self, *args, **kwargs):
+        if self.instance is None:
+            self.instance = self.cls(*args, **kwargs)
+        return self.instance
 
 
 def timelimit(timeout: Union[int, float]):
