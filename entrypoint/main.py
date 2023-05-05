@@ -91,7 +91,7 @@ if __name__ == "__main__":
         "max_requests_jitter": 512,  # 随机重启防止所有worker一起重启：randint(0, max_requests_jitter)
         "graceful_timeout": 120,
         "timeout": 180,
-        "logger_class": "core.loguru.GunicornLogger",
+        "logger_class": "common.loguru.GunicornLogger",
         # "config": "entrypoint.gunicorn_conf.py",
         # "post_fork": "entrypoint.main.post_fork",
     }
