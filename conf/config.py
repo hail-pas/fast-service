@@ -49,9 +49,10 @@ class Relational(HostAndPort):
 
     @property
     def tortoise_orm_config(self):
-        echo = (
-            True if ENVIRONMENT == EnvironmentEnum.development.value else False
-        )
+        # echo = (
+        #     True if ENVIRONMENT == EnvironmentEnum.development.value else False
+        # )
+        echo = False
         return {
             "connections": {
                 "default": {

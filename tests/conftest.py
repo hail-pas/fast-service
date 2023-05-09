@@ -1,6 +1,7 @@
 import asyncio
 from types import ModuleType
 from typing import Union, Iterable
+from urllib.parse import quote
 
 import pytest
 import pytest_asyncio
@@ -27,7 +28,7 @@ TEST_CONNECTION_CONGIF = local_configs.RELATIONAL.tortoise_orm_config.get(
     "connections"
 ).get("test")
 if TEST_CONNECTION_CONGIF:
-    TORTOISE_TEST_DB = f"mysql://{TEST_CONNECTION_CONGIF.get('credentials').get('user')}:{TEST_CONNECTION_CONGIF.get('credentials').get('password')}@{TEST_CONNECTION_CONGIF.get('credentials').get('host')}:{TEST_CONNECTION_CONGIF.get('credentials').get('port')}/fast_service_test?charset=utf8mb4"  # noqa
+    TORTOISE_TEST_DB = f"mysql://{quote(TEST_CONNECTION_CONGIF.get('credentials').get('user'))}:{quote(TEST_CONNECTION_CONGIF.get('credentials').get('password'))}@{TEST_CONNECTION_CONGIF.get('credentials').get('host')}:{TEST_CONNECTION_CONGIF.get('credentials').get('port')}/fast_service_test?charset=utf8mb4"  # noqa
 
 
 def getTestDBConfig(

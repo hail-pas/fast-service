@@ -1,12 +1,24 @@
 import json
 import asyncio
 import email.message
-from typing import Any, Dict, Type, Union, Callable, Optional, Coroutine
+from enum import Enum
+from typing import (
+    Any,
+    Set,
+    Dict,
+    List,
+    Type,
+    Union,
+    Callable,
+    Optional,
+    Sequence,
+    Coroutine,
+)
 from contextlib import AsyncExitStack
 
 from loguru import logger
 from fastapi import FastAPI, params
-from fastapi.utils import is_body_allowed_for_status_code
+from fastapi.utils import generate_unique_id, is_body_allowed_for_status_code
 from fastapi.routing import (
     APIRoute,
     jsonable_encoder,
@@ -17,6 +29,7 @@ from fastapi.routing import (
 from pydantic.fields import Undefined, ModelField
 from fastapi.encoders import SetIntStr, DictIntStrAny
 from starlette.routing import Mount as Mount  # noqa
+from starlette.routing import BaseRoute
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
@@ -121,6 +134,84 @@ async def serialize_response(
 
 
 class RespSchemaAPIRouter(APIRoute):
+    # default
+
+    def __init__(
+        self,
+        path: str,
+        endpoint: Callable[..., Any],
+        *,
+        response_model: Any = Default(None),
+        status_code: Optional[int] = None,
+        tags: Optional[List[Union[str, Enum]]] = None,
+        dependencies: Optional[Sequence[params.Depends]] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        response_description: str = "Successful Response",
+        responses: Optional[Dict[Union[int, str], Dict[str, Any]]] = None,
+        deprecated: Optional[bool] = None,
+        name: Optional[str] = None,
+        methods: Optional[Union[Set[str], List[str]]] = None,
+        operation_id: Optional[str] = None,
+        response_model_include: Optional[
+            Union[SetIntStr, DictIntStrAny]
+        ] = None,
+        response_model_exclude: Optional[
+            Union[SetIntStr, DictIntStrAny]
+        ] = None,
+        response_model_by_alias: bool = True,
+        response_model_exclude_unset: bool = False,
+        response_model_exclude_defaults: bool = False,
+        response_model_exclude_none: bool = False,
+        include_in_schema: bool = True,
+        response_class: Union[Type[Response], DefaultPlaceholder] = Default(
+            JSONResponse
+        ),
+        dependency_overrides_provider: Optional[Any] = None,
+        callbacks: Optional[List[BaseRoute]] = None,
+        openapi_extra: Optional[Dict[str, Any]] = None,
+        generate_unique_id_function: Union[
+            Callable[["APIRoute"], str], DefaultPlaceholder
+        ] = Default(generate_unique_id),
+    ) -> None:
+        super().__init__(
+            path,
+            endpoint,
+            response_model=response_model,
+            status_code=status_code,
+            tags=tags,
+            dependencies=dependencies,
+            summary=summary,
+            description=description,
+            response_description=response_description,
+            responses=responses,
+            deprecated=deprecated,
+            name=name,
+            methods=methods,
+            operation_id=operation_id,
+            response_model_include=response_model_include,
+            response_model_exclude=response_model_exclude,
+            response_model_by_alias=response_model_by_alias,
+            response_model_exclude_unset=response_model_exclude_unset,
+            response_model_exclude_defaults=response_model_exclude_defaults,
+            response_model_exclude_none=response_model_exclude_none,
+            include_in_schema=include_in_schema,
+            response_class=response_class,
+            dependency_overrides_provider=dependency_overrides_provider,
+            callbacks=callbacks,
+            openapi_extra=openapi_extra,
+            generate_unique_id_function=generate_unique_id_function,
+        )
+        if response_model:
+            self.responses.update(
+                {
+                    "default": {
+                        "model": response_model,
+                        "description": "Successful Response",
+                    },
+                }
+            )
+
     def get_route_handler(self) -> Callable:
         # 兼容 Resp instance 直接返回，避免重复校验响应体
         # 也可以扩展 MsgPack
