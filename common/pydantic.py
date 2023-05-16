@@ -1,9 +1,10 @@
 import inspect
+from typing import List
 from datetime import datetime
 
 import pydantic
 
-from common.utils import DATETIME_FORMAT_STRING
+from common.utils import DATETIME_FORMAT_STRING, filter_dict
 
 
 def optional(*fields):
@@ -34,3 +35,19 @@ class DateTimeFormatConfig:
     json_encoders = {
         datetime: lambda v: v.strftime(DATETIME_FORMAT_STRING),
     }
+
+
+def sub_fields_model(
+    base_model: pydantic.BaseModel,
+    fields: List[str],
+) -> pydantic.BaseModel:
+    class ToModel(base_model):
+        pass
+
+    ToModel.__fields__ = filter_dict(
+        ToModel.__fields__, lambda k, _: k in fields
+    )
+    ToModel.__config__.fields = filter_dict(
+        ToModel.__config__.fields, lambda k, _: k in fields
+    )
+    return ToModel

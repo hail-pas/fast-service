@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, PositiveInt, conint
 
@@ -9,5 +9,6 @@ class Pager(BaseModel):
 
 
 class CURDPager(Pager):
-    order_by: List = []
+    order_by: set[str] = set()
     search: Optional[str] = None
+    selected_fields: Optional[set[str]] = None

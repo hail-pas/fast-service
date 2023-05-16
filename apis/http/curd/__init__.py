@@ -1,5 +1,6 @@
 from typing import (
     Any,
+    Set,
     Dict,
     List,
     Type,
@@ -25,6 +26,7 @@ from tortoise.transactions import atomic
 
 from common.fastapi import RespSchemaAPIRouter
 from common.schemas import CURDPager
+from common.pydantic import sub_fields_model
 from common.responses import Resp, PageResp, generate_page_info
 from apis.dependencies import paginate
 from common.exceptions import ApiException
@@ -58,13 +60,16 @@ PAGINATION = Dict[str, Optional[int]]
 
 
 def pagination_factory(
-    db_model: Model, search_fields, max_limit: Optional[int] = None
+    db_model: Model,
+    search_fields: Set[str],
+    list_schema: BaseModel,
+    max_limit: Optional[int] = None,
 ) -> CURDPager:
     """
     Created the pagination dependency to be used in the router
     """
 
-    return Depends(paginate(db_model, search_fields, max_limit))
+    return Depends(paginate(db_model, search_fields, list_schema, max_limit))
 
 
 DEPENDENCIES = Optional[Sequence[Depends]]
@@ -173,6 +178,7 @@ class CURDGenerator(Generic[T], APIRouter):
         self.pagination: CURDPager = pagination_factory(
             db_model,
             search_fields=set(search_fields or []),
+            list_schema=self.schema,
             max_limit=max_paginate_limit,
         )
         self._pk: str = self._pk if hasattr(self, "_pk") else "id"
@@ -374,11 +380,17 @@ class CURDGenerator(Generic[T], APIRouter):
                 q_expression = Q(*sub_q_exps, join_type=Q.OR)
                 queryset = queryset.filter(q_expression)
 
-            data = await self.schema.from_queryset(
+            list_schema = self.schema
+            if pagination.selected_fields:
+                list_schema = sub_fields_model(
+                    self.schema, pagination.selected_fields
+                )
+
+            data = await list_schema.from_queryset(
                 queryset.offset(pagination.offset).limit(pagination.limit)
             )
             total = await queryset.count()
-            return PageResp[self.schema](
+            return PageResp[list_schema](
                 data=data, page_info=generate_page_info(total, pagination)
             )
 

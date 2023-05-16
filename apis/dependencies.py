@@ -5,7 +5,7 @@ from urllib.parse import unquote
 from jose import ExpiredSignatureError
 from loguru import logger
 from fastapi import Query, Header, Depends, Security
-from pydantic import PositiveInt
+from pydantic import BaseModel, PositiveInt
 from tortoise.models import Model
 from fastapi.security import (
     HTTPBearer,
@@ -85,23 +85,29 @@ def pure_get_pager(
 
 
 def paginate(
-    model: Model, search_fields: Optional[set], max_limit: Optional[int]
+    model: Model,
+    search_fields: Optional[set],
+    list_schema: BaseModel,
+    max_limit: Optional[int],
 ):
     def get_pager(
         page: PositiveInt = Query(default=1, example=1, description="第几页"),
         size: PositiveInt = Query(default=10, example=10, description="每页数量"),
-        order_by: str = Query(
-            default="",
-            example="-id",
-            description=f"排序字段, 多个字段用逗号分隔. 可选字段: {', '.join(model._meta.db_fields)}",
-        ),
         search: str = Query(
             None, description=f"搜索关键字, 匹配字段: {', '.join(search_fields)}"
+        ),
+        order_by: set[str] = Query(
+            default=set(),
+            example="-id",
+            description=f"排序字段, 多个字段用英文逗号分隔. 升序保持原字段名, 降序增加前缀-. 可选字段: {', '.join(model._meta.db_fields)}",
+        ),
+        selected_fields: Optional[set[str]] = Query(
+            default=set(),
+            description=f"返回字段, 多个字段用英文逗号分隔. 可选字段: {', '.join(list_schema.__fields__.keys())}",
         ),
     ):
         if max_limit:
             size = min(size, max_limit)
-        order_by = list(filter(lambda x: x, order_by.split(",")))
         for field in order_by:
             if field.startswith("-"):
                 field = field[1:]
@@ -109,11 +115,14 @@ def paginate(
                 raise ApiException(
                     ObjectNotExistMsgTemplate % f"排序字段 {field} ",
                 )
+        if selected_fields:
+            selected_fields.add("id")
         return CURDPager(
             limit=size,
             offset=(page - 1) * size,
-            order_by=order_by,
+            order_by=order_by or set(),
             search=search,
+            selected_fields=selected_fields,
         )
 
     return get_pager
