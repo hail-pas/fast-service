@@ -164,8 +164,8 @@ class AsyncRedisUtil:
         )
 
     @classmethod
-    async def close(cls):
-        await cls._pool.disconnect()
+    async def close(cls, inuse_connections: bool = False):
+        await cls._pool.disconnect(inuse_connections=inuse_connections)
 
 
 async def get_async_redis():
