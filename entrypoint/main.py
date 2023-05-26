@@ -83,7 +83,7 @@ if __name__ == "__main__":
     options = {
         "bind": "%s:%s"
         % (local_configs.SERVER.HOST, local_configs.SERVER.PORT),
-        "workers": 1,  # local_configs.SERVER.WORKERS_NUM,
+        "workers": local_configs.SERVER.WORKERS_NUM,
         "worker_class": "uvicorn.workers.UvicornWorker",
         "debug": local_configs.PROJECT.DEBUG,
         "log_level": "debug" if local_configs.PROJECT.DEBUG else "info",

@@ -12,13 +12,16 @@ from itertools import chain
 from loguru import logger
 from fastapi import Request, Response
 from gunicorn import glogging
-from starlette.concurrency import iterate_in_threadpool
 
 from conf.config import BASE_DIR, EnvironmentEnum, local_configs
 from common.types import StrEnumMore
 from common.utils import datetime_now, get_request_id
-from common.responses import ResponseCodeEnum
+
+# from common.responses import ResponseCodeEnum
 from common.decorators import extend_enum
+
+# from starlette.concurrency import iterate_in_threadpool
+
 
 LOG_LEVEL = logging.DEBUG if local_configs.PROJECT.DEBUG else logging.INFO
 
@@ -216,7 +219,7 @@ def init_loguru():
     UVICORN_LOGGING_MODULES = (
         LoggerNameEnum.uvicorn_error.value,
         LoggerNameEnum.uvicorn_asgi.value,
-        LoggerNameEnum.uvicorn_access.value,
+        # LoggerNameEnum.uvicorn_access.value,
         LoggerNameEnum.fastaapi.value,
         LoggerNameEnum.tortoise.value,
     )
@@ -228,6 +231,11 @@ def init_loguru():
     # disable duplicate logging
     logging.getLogger(LoggerNameEnum.root.value).handlers.clear()
     logging.getLogger("uvicorn").handlers.clear()
+
+    # disable Uvicorn log
+    logging.getLogger(LoggerNameEnum.uvicorn_access.value).setLevel(
+        LogLevelEnum.ERROR.value
+    )
 
 
 @enum.unique
@@ -242,15 +250,16 @@ async def log_info_request(request: Request, response: Response):
     # 请求相关信息
     info_dict = {
         "method": request.method,
-        "url": request.url.path,
+        "uri": request.url.path,
         # "request_id": get_request_id(),
-        "process_time": response.headers["X-Process-Time"],
+        "process_time": int(response.headers["X-Process-Time"]),  # ms
     }
-    response_code = response.headers.get("x-response-code")
-    if response_code and response_code != str(ResponseCodeEnum.success.value):
-        response_body = [chunk async for chunk in response.body_iterator]
-        response.body_iterator = iterate_in_threadpool(iter(response_body))
-        info_dict["response_data"] = response_body[0].decode("utf-8")
+    response_code = int(response.headers.get("x-response-code", 200))
+    info_dict["response_code"] = response_code
+    # if response_code and response_code != str(ResponseCodeEnum.success.value):
+    #     response_body = [chunk async for chunk in response.body_iterator]
+    #     response.body_iterator = iterate_in_threadpool(iter(response_body))
+    #     info_dict["response_data"] = response_body[0].decode("utf-8")
 
     logger.bind(
         name=InfoLoggerNameEnum.info_request_logger.value, json=True
