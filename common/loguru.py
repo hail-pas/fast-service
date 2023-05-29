@@ -12,6 +12,7 @@ from itertools import chain
 from loguru import logger
 from fastapi import Request, Response
 from gunicorn import glogging
+from rich.console import Console
 
 from conf.config import BASE_DIR, EnvironmentEnum, local_configs
 from common.types import StrEnumMore
@@ -22,6 +23,8 @@ from common.decorators import extend_enum
 
 # from starlette.concurrency import iterate_in_threadpool
 
+
+console = Console()
 
 LOG_LEVEL = logging.DEBUG if local_configs.PROJECT.DEBUG else logging.INFO
 
@@ -85,6 +88,9 @@ class InterceptHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         if record.name in IgonredLoggerNames:
             return
+        # 动态日志级别, 涉及到进程、线程间共享字典，性能损耗大
+        # if DynamicLogLevelConfig.get(name, to_int_level(LOG_LEVEL)) > to_int_level(log["level"]):
+        #         return
         try:
             level = logger.level(record.levelname).name
         except ValueError:
@@ -103,9 +109,10 @@ class InterceptHandler(logging.Handler):
         if record.exc_info:
             # 异常日志处理
             if local_configs.PROJECT.DEBUG:
-                print(
-                    f"{ColorEnum.bold_red.value}{traceback.format_exc()}{request_id}"
-                )
+                # print(
+                #     f"{ColorEnum.bold_red.value}{traceback.format_exc()}{request_id}"
+                # )
+                console.log(traceback.format_exc(), log_locals=True)
             else:
                 # 保持日志一致性
                 tb = traceback.extract_tb(sys.exc_info()[2])
@@ -142,9 +149,6 @@ def serialize(record: dict):
     log = {}
     name = record["name"]
     log["level"] = record["level"].name
-    # 动态日志级别, 涉及到进程、线程间共享字典，性能损耗大
-    # if DynamicLogLevelConfig.get(name, to_int_level(LOG_LEVEL)) > to_int_level(log["level"]):
-    #         return
     log["time"] = record["time"].strftime("%Y-%m-%d %H:%M:%S %Z %z")
     log["message"] = record["message"]
     if record["extra"].get("json"):
@@ -165,20 +169,23 @@ def json_sink(message):
     if not serialized:
         return
 
-    color = ""
-
+    # color = ""
+    # if local_configs.PROJECT.ENVIRONMENT == EnvironmentEnum.development.value:
+    #     level_color = {
+    #         "TRACE": ColorEnum.blue.value,
+    #         "DEBUG": ColorEnum.cyan.value,
+    #         "INFO": ColorEnum.green.value,
+    #         "SUCCESS": ColorEnum.no_color.value,
+    #         "WARNING": ColorEnum.yellow.value,
+    #         "ERROR": ColorEnum.red.value,
+    #         "CRITICAL": ColorEnum.bold_red.value,
+    #     }
+    #     color = level_color.get(serialized["level"], ColorEnum.no_color.value)
+    # print(f"{color}{serialized}")
     if local_configs.PROJECT.ENVIRONMENT == EnvironmentEnum.development.value:
-        level_color = {
-            "TRACE": ColorEnum.blue.value,
-            "DEBUG": ColorEnum.cyan.value,
-            "INFO": ColorEnum.green.value,
-            "SUCCESS": ColorEnum.no_color.value,
-            "WARNING": ColorEnum.yellow.value,
-            "ERROR": ColorEnum.red.value,
-            "CRITICAL": ColorEnum.bold_red.value,
-        }
-        color = level_color.get(serialized["level"], ColorEnum.no_color.value)
-    print(f"{color}{serialized}")
+        console.print_json(data=serialized)
+    else:
+        print(serialized)
 
 
 class GunicornLogger(glogging.Logger):
