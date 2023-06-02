@@ -138,7 +138,6 @@ def paginate(
 async def token_required(
     request: Request,
     token: Annotated[HTTPAuthorizationCredentials, Depends(auth_schema)],
-    x_role_id: str = Header(..., description="角色id"),
 ) -> Account:
     jwt_secret: str = local_configs.JWT.SECRET
     try:
@@ -173,13 +172,6 @@ async def token_required(
             code=ResponseCodeEnum.unauthorized.value,
             message=AuthorizationHeaderInvalidMsg,
         )
-    role = await account.roles.filter(id=x_role_id).first()
-    if not role:
-        raise ApiException(
-            code=ResponseCodeEnum.unauthorized.value,
-            message=BrokenAccessControl,
-        )
-    request.scope["role"] = role
     request.scope["user"] = account
     return account
 
@@ -212,10 +204,19 @@ async def api_key_required(
 async def api_permission_check(
     request: Request,
     account: Account = Depends(token_required),
+    x_role_id: str = Header(title="角色id", description="使用的角色id"),
 ) -> Account:
     # router = request.scope["router"]
     # endpoint = request.scope["endpoint"]
-    permissions = await get_permissions(account, request.scope["role"])
+    role = await account.roles.filter(id=x_role_id).first()
+    if not role:
+        raise ApiException(
+            code=ResponseCodeEnum.forbidden.value,
+            message=BrokenAccessControl,
+        )
+    request.scope["role"] = role
+
+    permissions = await get_permissions(account, role)
 
     method = request.method
     path = request.scope["path"]

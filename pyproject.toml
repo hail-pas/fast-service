@@ -11,36 +11,34 @@ authors = ["phoenix <hypofiasco@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = ">=3.9.0,<3.12"
-ipython = "8.11.0"
-fastapi = "0.95.0"
+ipython = "8.14.0"
+fastapi = "0.95.2"
 starlette-context = "0.3.6"
-ujson = "2.0.3"
-httpx = "0.23.3"
-pycryptodomex = "3.17"
+ujson = "5.7.0"  # 2.0.3
+httpx = "0.24.1"
+pycryptodomex = "3.18.0"
 passlib = "1.7.4"
 bcrypt = "4.0.1"
-pyopenssl = "23.0.0"
+pyopenssl = "23.2.0"
 python-jose = { extras = ["cryptography"], version = "3.3.0" }
 python-multipart = "0.0.6"
-uvicorn = { extras = ["standard"], version = "0.21.1" }
+uvicorn = { extras = ["standard"], version = "0.22.0" }
 gunicorn = "20.1.0"
 loguru = "0.7.0"
 aioredis = "2.0.1"
 aiofiles = { extras = ["hiredis"], version = "23.1.0" }
-sentry-sdk = { extras = ["fastapi"], version = "1.17.0" }
-protobuf = "4.22.1"
-grpcio = "1.51.3"
-grpcio-tools = "1.51.3"
+sentry-sdk = { extras = ["fastapi"], version = "1.25.0" }
+protobuf = "4.23.2"
+grpcio = "1.54.2"
+grpcio-tools = "1.54.2"
 tortoise-orm = { extras = ["aiomysql"], version = "0.19.3" }
 fastapi-cache2 = { extras = ["redis"], version = "0.2.1" }
-fastapi-pagination = {extras = ["tortoise-orm"], version = "^0.11.4"}
-typer = "0.7.0"
+typer = "0.9.0"
 aerich = "0.7.1"
-elasticsearch = { extras = ["async"], version = "7.8.0" }
 # strawberry-graphql = "0.165.1"
 redis-om = "0.1.2"
 kubernetes = "26.1.0"
-rich = "13.3.5"
+rich = "13.4.1"
 pyinstrument = "4.4.0"    # profile
 
 [tool.poetry.dev-dependencies]
