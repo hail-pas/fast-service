@@ -1,7 +1,7 @@
 from common.command import cli
 
 
-async def init_ctx_relational():
+async def init_ctx_relational() -> None:
     from tortoise import Tortoise
 
     from conf.config import local_configs
@@ -9,13 +9,13 @@ async def init_ctx_relational():
     await Tortoise.init(config=local_configs.RELATIONAL.tortoise_orm_config)
 
 
-async def init_ctx_redis():
+async def init_ctx_redis() -> None:
     from storages.redis import AsyncRedisUtil
 
     AsyncRedisUtil.init(single_connection_client=True)
 
 
-async def init_ctx():
+async def init_ctx() -> None:
     await init_ctx_relational()
     await init_ctx_redis()
     # import importlib
@@ -25,7 +25,7 @@ async def init_ctx():
 
 
 @cli.command("shell", short_help="命令行模式")
-def shell():
+def shell() -> None:
     import pdb  # noqa
     import cProfile
     import importlib

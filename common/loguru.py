@@ -13,7 +13,7 @@ from gunicorn import glogging
 from rich.console import Console
 
 from conf.config import BASE_DIR, EnvironmentEnum, local_configs
-from common.types import StrEnumMore
+from common.types import Map, StrEnumMore
 from common.utils import datetime_now
 
 # from common.responses import ResponseCodeEnum
@@ -74,7 +74,7 @@ IgonredLoggerNames = [
 ]
 
 
-def to_int_level(level):
+def to_int_level(level: str | int) -> int:
     if level in LogLevelEnum.labels:
         return LogLevelEnum.values[LogLevelEnum.labels.index(level)]
     return int(level)
@@ -133,7 +133,10 @@ class InterceptHandler(logging.Handler):
         )
 
 
-def setup_loguru_logging_intercept(level=logging.DEBUG, modules=()):
+def setup_loguru_logging_intercept(
+    level: int = logging.DEBUG,
+    modules: tuple = (),
+) -> None:
     logging.basicConfig(handlers=[InterceptHandler()], level=level)  # noqa
     for logger_name in chain(("",), modules):
         mod_logger = logging.getLogger(logger_name)
@@ -142,7 +145,7 @@ def setup_loguru_logging_intercept(level=logging.DEBUG, modules=()):
         # mod_logger.propagate = False
 
 
-def serialize(record: dict):
+def serialize(record: dict) -> dict:
     """Serialize the JSON log."""
     log = {}
     name = record["name"]
@@ -162,7 +165,7 @@ def serialize(record: dict):
     return log
 
 
-def json_sink(message):
+def json_sink(message: Map) -> None:  # from loguru import Message
     serialized = serialize(message.record)
     if not serialized:
         return
@@ -187,7 +190,7 @@ def json_sink(message):
 
 
 class GunicornLogger(glogging.Logger):
-    def __init__(self, cfg):
+    def __init__(self, cfg: any) -> None:
         super().__init__(cfg)
         LOGGING_MODULES = (
             LoggerNameEnum.gunicorn_error.value,
@@ -200,7 +203,7 @@ class GunicornLogger(glogging.Logger):
         )
 
 
-def init_loguru():
+def init_loguru() -> None:
     # loguru
     logger.remove()
     logger.add(

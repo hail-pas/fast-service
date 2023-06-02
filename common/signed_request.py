@@ -7,7 +7,13 @@ from loguru import logger
 from common.encrypt import SignAuth
 
 
-async def request(method, url, api_key, sign_key, **kwargs):
+async def request(
+    method: str,
+    url: str,
+    api_key: str,
+    sign_key: str,
+    **kwargs,
+) -> httpx.Response:
     timestamp = str(int(time.time()))
     headers = kwargs.get("headers", {})
     headers.update({"x-timestamp": timestamp})

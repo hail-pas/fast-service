@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import abc
 import enum
 import string
 import asyncio
-from typing import Any, Optional
+from typing import TypeVar
 from functools import partial
 
 import httpx
@@ -30,15 +32,15 @@ class RequestMethodEnum(enum.Enum):
 class Response:
     success: bool = False
     status_code: int = None
-    data: Any = None
+    data: dict | str | None = None
     request_context: dict
 
     def __init__(
         self,
-        success,
-        status_code,
-        data,
-        request_context,
+        success: bool,
+        status_code: int,
+        data: dict | str | None,
+        request_context: dict,
         **kwargs,
     ) -> None:
         self.success = success
@@ -48,19 +50,22 @@ class Response:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def json(self):
+    def json(self) -> dict | str | None:
         return self.data
 
     @classmethod
     def parse_response(
         cls,
         raw_response: httpx.Response,
-        request_context,
-    ) -> "Response":
+        request_context: dict,
+    ) -> ResponseType:
         raise NotImplementedError
 
     def __repr__(self) -> str:
         return f"success: {self.success}, status_code: {self.status_code}"
+
+
+ResponseType = TypeVar("ResponseType", bound=Response)
 
 
 class DefaultResponse(Response):
@@ -68,8 +73,8 @@ class DefaultResponse(Response):
     def parse_response(
         cls,
         raw_response: httpx.Response,
-        request_context,
-    ) -> "Response":
+        request_context: dict,
+    ) -> Response:
         status_code = raw_response.status_code
         success = False
         try:
@@ -90,7 +95,7 @@ class APIBaseConfig:
     name: str
     protocol: str
     host: str
-    port: Optional[int]
+    port: int | None
     headers: dict
     params: dict
     data: dict
@@ -104,7 +109,7 @@ class APIBaseConfig:
         name: str,
         protocol: str,
         host: str = None,
-        port: Optional[int] = None,
+        port: int | None = None,
         headers: dict = None,
         params: dict = None,
         data: dict = None,
@@ -151,7 +156,7 @@ class API(APIBaseConfig):
         uri: str,
         protocol: str = None,
         host: str = None,
-        port: Optional[int] = None,
+        port: int | None = None,
         response_cls: type[Response] = None,
         headers: dict = None,
         cookies: dict = None,
@@ -187,8 +192,8 @@ class Third(APIBaseConfig):
     apis: set[API] = set()
     _api_names: set[str] = set()
     # _request = requests.request
-    api_key: Optional[str] = None
-    sign_key: Optional[str] = None
+    api_key: str | None = None
+    sign_key: str | None = None
 
     def __init__(
         self,
@@ -196,7 +201,7 @@ class Third(APIBaseConfig):
         protocol: str,
         host: str,
         response_cls: type[Response],
-        port: Optional[int] = None,
+        port: int | None = None,
         apis: list[API] = None,
         headers: dict = None,
         params: dict = None,
@@ -244,7 +249,7 @@ class Third(APIBaseConfig):
         # if request:
         # self._request = request
 
-    def register_api(self, api: API):
+    def register_api(self, api: API) -> None:
         assert (
             all(
                 i
@@ -261,7 +266,7 @@ class Third(APIBaseConfig):
         self.apis.add(api)
         setattr(self, api.name, partial(self.request, api=api))
 
-    def update_dict(self, attr_name, api, _d):
+    def update_dict(self, attr_name: str, api: API, _d: dict) -> dict:
         data = getattr(self, attr_name) or {}
         api_data = getattr(api, attr_name)
         if api_data:
@@ -272,7 +277,7 @@ class Third(APIBaseConfig):
 
     async def request(
         self,
-        api,
+        api: API,
         params: dict = None,
         data: dict = None,
         json: dict = None,
@@ -280,7 +285,7 @@ class Third(APIBaseConfig):
         cookies: dict = None,
         timeout: int = None,
         **kwargs,
-    ):
+    ) -> ResponseType:
         protocol = api.protocol if api.protocol else self.protocol
         host = api.host if api.host else self.host
         prefix = f"{protocol}://{host}"
@@ -333,7 +338,9 @@ class Third(APIBaseConfig):
         }
         try:
             async with httpx.AsyncClient() as client:
-                raw_response = await client.request(**request_kwargs)
+                raw_response: httpx.Response = await client.request(
+                    **request_kwargs,
+                )
         except Exception as e:
             logger.bind(json=True).error(
                 {
@@ -374,9 +381,9 @@ class Third(APIBaseConfig):
         self,
         api: API,
         request_context: dict,
-        raw_response,
-        response_cls=None,
-    ):
+        raw_response: httpx.Response,
+        response_cls: ResponseType = None,
+    ) -> Response:
         if not response_cls:
             response_cls = self.response_cls
             if api.response_cls:
@@ -388,7 +395,7 @@ if __name__ == "__main__":
 
     class GoogleAPI(Third):
         @abc.abstractmethod
-        async def search(self, *args, **kwargs):
+        async def search(self, *args, **kwargs) -> ResponseType:
             pass
 
     google_apis = [

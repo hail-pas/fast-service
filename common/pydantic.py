@@ -1,4 +1,5 @@
 import inspect
+from typing import Callable
 from datetime import datetime
 
 import pydantic
@@ -6,14 +7,14 @@ import pydantic
 from common.utils import DATETIME_FORMAT_STRING, filter_dict
 
 
-def optional(*fields):
+def optional(*fields) -> Callable[[pydantic.BaseModel], pydantic.BaseModel]:
     """Decorator function used to modify a pydantic model's fields to all be optional.
     Alternatively, you can  also pass the field names that should be made optional as arguments
     to the decorator.
     Taken from https://github.com/samuelcolvin/pydantic/issues/1223#issuecomment-775363074.
     """
 
-    def dec(_cls):
+    def dec(_cls: pydantic.BaseModel) -> pydantic.BaseModel:
         for field in fields:
             _cls.__fields__[field].required = False
         return _cls

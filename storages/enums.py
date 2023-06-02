@@ -40,7 +40,7 @@ class RespFormatEnum(StrEnumMore):
     json_ = ("json", "JSON")
 
 
-class IOrderEnum(StrEnumMore):
+class OrderEnum(StrEnumMore):
     ascendent = ("ascendent", "升序")
     descendent = ("descendent", "降序")
 
@@ -76,7 +76,7 @@ __enum_choices__ = [
 def get_enum_content(
     enum_name: Optional[str] = None,
     is_reversed: bool = False,
-):
+) -> dict:
     enum_content = {}
     enum_list = []
     if enum_name:

@@ -51,7 +51,7 @@ LoginSchema = pydantic_model_creator(
     description="登录接口",
     response_model=Resp[AuthData],
 )
-async def login(login_data: LoginSchema):
+async def login(login_data: LoginSchema) -> Resp[AuthData]:
     account: Optional[Account] = (
         await Account.filter(username=login_data.username)
         .prefetch_related("roles")
@@ -81,7 +81,7 @@ async def login(login_data: LoginSchema):
 )
 async def refresh_token(
     account: Account = Depends(token_required),
-):
+) -> Resp[AuthData]:
     return Resp[AuthData](data=await get_auth_data(account))
 
 
@@ -92,7 +92,7 @@ async def refresh_token(
     response_model=SimpleSuccess,
     dependencies=[Depends(token_required)],
 )
-async def logout():
+async def logout() -> SimpleSuccess:
     return SimpleSuccess()
 
 

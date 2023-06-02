@@ -18,7 +18,12 @@ from Cryptodome.Util.Padding import pad, unpad
 class AESUtil:
     """aes 加密与解密."""
 
-    def __init__(self, key: str, style="pkcs7", mode=AES.MODE_ECB) -> None:
+    def __init__(
+        self,
+        key: str,
+        style: str = "pkcs7",
+        mode: int = AES.MODE_ECB,
+    ) -> None:
         self.mode = mode
         self.style = style
         self.key = base64.b64decode(key.encode())
@@ -44,7 +49,7 @@ class AESUtil:
         )
 
     @staticmethod
-    def generate_key(length=256) -> str:
+    def generate_key(length: int = 256) -> str:
         random_key = os.urandom(length)
         private_key = hashlib.sha256(random_key).digest()
         return base64.b64encode(private_key).decode()
@@ -57,7 +62,7 @@ class RSAUtil:
         self,
         pub_key_path: str,
         private_key_path: str,
-        password,
+        password: str,
     ) -> None:
         self.password = password
         with open(private_key_path, "rb") as f:
@@ -65,7 +70,7 @@ class RSAUtil:
         with open(pub_key_path, "rb") as f:
             self.pub_key = f.read()
 
-    def encrypt(self, text: str, length=200) -> str:
+    def encrypt(self, text: str, length: int = 200) -> str:
         """Rsa 加密."""
         key = RSA.import_key(self.pub_key)
         cipher = PKCS1_v1_5.new(key)
@@ -76,7 +81,7 @@ class RSAUtil:
             res.append(cipher_text)
         return base64.b64encode(b"".join(res)).decode()
 
-    def decrypt(self, text: str):
+    def decrypt(self, text: str) -> str:
         """Rsa 解密."""
         key = RSA.import_key(self._get_private_key())
         cipher = PKCS1_v1_5.new(key)
@@ -87,7 +92,7 @@ class RSAUtil:
 
     def _get_private_key(
         self,
-    ):
+    ) -> bytes:
         """从pfx文件读取私钥."""
         pfx = crypto.load_pkcs12(self.private_key, self.password.encode())
         return crypto.dump_privatekey(
@@ -95,7 +100,7 @@ class RSAUtil:
             pfx.get_privatekey(),
         )
 
-    def sign(self, text) -> str:
+    def sign(self, text: str) -> str:
         """Rsa 签名."""
         p12 = OpenSSL.crypto.load_pkcs12(
             self.private_key,
@@ -106,7 +111,7 @@ class RSAUtil:
             OpenSSL.crypto.sign(pri_key, text.encode(), "sha256"),
         ).decode()
 
-    def verify(self, sign, data: str):
+    def verify(self, sign: str, data: str) -> bool:
         """验签."""
         key = OpenSSL.crypto.load_certificate(FILETYPE_PEM, self.pub_key)
         return OpenSSL.crypto.verify(
@@ -173,7 +178,7 @@ class SignAuth:
         self,
         sign: str,
         data_str: str,
-    ):
+    ) -> bool:
         """校验sign."""
         sign_tmp = self.generate_sign(data_str)
         return sign == sign_tmp
@@ -189,11 +194,15 @@ class PasswordUtil:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
     @classmethod
-    def verify_password(cls, plain_password: str, hashed_password: str):
+    def verify_password(
+        cls,
+        plain_password: str,
+        hashed_password: str,
+    ) -> bool:
         return cls.pwd_context.verify(plain_password, hashed_password)
 
     @classmethod
-    def get_password_hash(cls, plain_password: str):
+    def get_password_hash(cls, plain_password: str) -> str:
         return cls.pwd_context.hash(plain_password)
 
 
@@ -208,5 +217,5 @@ class Jwt:
     def get_jwt(self, payload: dict) -> str:
         return jwt.encode(payload, self.secret, algorithm=self.algorithm)
 
-    def decode(self, credentials) -> dict:
+    def decode(self, credentials: str | bytes) -> dict:
         return jwt.decode(credentials, self.secret, algorithms=self.algorithm)

@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import os
 import importlib
 
 from tortoise import fields
 
+from tasks import TaskProxy
 from storages import enums
 from storages.relational.models.base import UUIDPrimaryKeyModel
 
@@ -24,9 +27,7 @@ class Task(UUIDPrimaryKeyModel):
         unique_together = (("file_path", "func_name"),)
 
     @property
-    def task_proxy(self):
-        from tasks import TaskProxy
-
+    def task_proxy(self) -> TaskProxy:
         module_name = self.file_path.replace(os.sep, ".")[:-3]
         func_name = self.func_name
         module = importlib.import_module(module_name)

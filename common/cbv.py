@@ -91,7 +91,7 @@ def _init_cbv(cls: type[Any]) -> None:
         )
     new_signature = old_signature.replace(parameters=new_parameters)
 
-    def new_init(self: Any, *args: Any, **kwargs: Any) -> None:
+    def new_init(self: any, *args, **kwargs) -> None:
         for dep_name in dependency_names:
             dep_value = kwargs.pop(dep_name)
             setattr(self, dep_name, dep_value)

@@ -6,7 +6,7 @@ class WSConnectionManager:
     def __init__(self) -> None:
         self.active_connections: list[WebSocket] = []
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket) -> None:
         await websocket.accept()
         self.active_connections.append(websocket)
         logger.info(
@@ -16,7 +16,7 @@ class WSConnectionManager:
             ),
         )
 
-    def disconnect(self, websocket: WebSocket):
+    def disconnect(self, websocket: WebSocket) -> None:
         self.active_connections.remove(websocket)
         logger.info(
             '{} - "WebSocket {}" [disconnected]'.format(
@@ -25,7 +25,11 @@ class WSConnectionManager:
             ),
         )
 
-    async def send_private_message(self, message: str, websocket: WebSocket):
+    async def send_private_message(
+        self,
+        message: str,
+        websocket: WebSocket,
+    ) -> None:
         await websocket.send_text(message)
 
     async def send_privete_json(
@@ -33,10 +37,10 @@ class WSConnectionManager:
         data: dict,
         websocket: WebSocket,
         mode: str = "text",
-    ):
+    ) -> None:
         await websocket.send_json(data, mode)
 
-    async def broadcast(self, message: str):
+    async def broadcast(self, message: str) -> None:
         for connection in self.active_connections:
             await connection.send_text(message)
 

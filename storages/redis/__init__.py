@@ -1,6 +1,7 @@
-from typing import Union, Optional
+from typing import Callable, Optional
 
-import aioredis
+from aioredis import Redis, Connection, ConnectionPool
+from aioredis.client import KeyT, FieldT, ExpiryT, _ArgT
 
 from conf.config import local_configs
 
@@ -9,8 +10,8 @@ class AsyncRedisUtil:
     """异步redis操作."""
 
     _db: int = local_configs.REDIS.DB
-    _pool: aioredis.ConnectionPool = None
-    _redis: aioredis.Redis = None
+    _pool: ConnectionPool = None
+    _redis: Redis = None
 
     @classmethod
     def init(
@@ -23,7 +24,7 @@ class AsyncRedisUtil:
         max_connections: int = local_configs.REDIS.MAX_CONNECTIONS,
         single_connection_client: bool = True,
         **kwargs,
-    ):
+    ) -> Redis:
         if cls._redis:
             return cls._redis
 
@@ -35,7 +36,7 @@ class AsyncRedisUtil:
         #     decode_responses=True,
         #     encoding_errors="strict",
         # )
-        cls._pool = aioredis.ConnectionPool(
+        cls._pool = ConnectionPool(
             host=host,
             port=port,
             db=db,
@@ -45,7 +46,7 @@ class AsyncRedisUtil:
             decode_responses=True,
             encoding_errors="strict",
         )
-        cls._redis = aioredis.Redis(
+        cls._redis = Redis(
             connection_pool=cls._pool,
             single_connection_client=single_connection_client,
             **kwargs,
@@ -53,11 +54,15 @@ class AsyncRedisUtil:
         return cls._redis
 
     @classmethod
-    def get_pool(cls, db: int = local_configs.REDIS.DB, **kwargs):
+    def get_pool(
+        cls,
+        db: int = local_configs.REDIS.DB,
+        **kwargs,
+    ) -> ConnectionPool:
         if db == cls._db:
             return cls._pool
-        return aioredis.ConnectionPool(
-            aioredis.Connection(
+        return ConnectionPool(
+            Connection(
                 host=local_configs.REDIS.HOST,
                 port=local_configs.REDIS.PORT,
                 db=db,
@@ -68,11 +73,16 @@ class AsyncRedisUtil:
         )
 
     @classmethod
-    def get_redis(cls):
+    def get_redis(cls) -> Redis:
         return cls._redis
 
     @classmethod
-    async def _exp_of_none(cls, *args, exp_of_none, callback):
+    async def _exp_of_none(
+        cls,
+        *args,
+        exp_of_none: ExpiryT,
+        callback: str,
+    ) -> any:
         """设置缓存过期."""
         if not exp_of_none:
             return await getattr(cls._redis, callback)(*args)
@@ -90,18 +100,18 @@ class AsyncRedisUtil:
         return ret  # noqa
 
     @classmethod
-    async def set(cls, key, value, exp=None):
-        await cls._redis.set(key, value, ex=exp)
+    async def set(cls, key: KeyT, value: _ArgT, exp: ExpiryT = None) -> any:
+        return await cls._redis.set(key, value, ex=exp)
 
     @classmethod
-    async def get(cls, key, default=None):
+    async def get(cls, key: KeyT, default: _ArgT = None) -> any:
         value = await cls._redis.get(key)
         if value is None:
             return default
         return value
 
     @classmethod
-    async def hget(cls, name: str, key: str, default=None):
+    async def hget(cls, name: str, key: str, default: _ArgT = None) -> any:
         """缓存清除, 接收list or str."""
         v = await cls._redis.hget(name, key)
         if v is None:
@@ -109,24 +119,35 @@ class AsyncRedisUtil:
         return v
 
     @classmethod
-    async def get_or_set(cls, key, default=None, value_fun=None):
+    async def get_or_set(
+        cls,
+        key: KeyT,
+        default: _ArgT | None = None,
+        value_func: Callable[[], tuple[_ArgT, ExpiryT]] = None,
+    ) -> any:
         """获取或者设置缓存."""
         value = await cls._redis.get(key)
         if value is None and default:
             return default
         if value is not None:
             return value
-        if value_fun:
-            value, exp = await value_fun()
+        if value_func:
+            value, exp = await value_func()
             await cls._redis.set(key, value, expire=exp)
         return value
 
     @classmethod
-    async def delete(cls, key: Union[list[str], str]):
+    async def delete(cls, key: KeyT) -> any:
         return await cls._redis.delete(key)
 
     @classmethod
-    async def sadd(cls, name, values, exp_of_none=None):
+    async def sadd(
+        cls,
+        name: KeyT,
+        values: list[_ArgT],
+        exp_of_none: ExpiryT = None,
+    ) -> any:
+        cls._redis.sadd()
         return await cls._exp_of_none(
             name,
             values,
@@ -135,7 +156,13 @@ class AsyncRedisUtil:
         )
 
     @classmethod
-    async def hset(cls, name, key, value, exp_of_none=None):
+    async def hset(
+        cls,
+        name: KeyT,
+        key: FieldT,
+        value: _ArgT,
+        exp_of_none: ExpiryT = None,
+    ) -> any:
         return await cls._exp_of_none(
             name,
             key,
@@ -145,7 +172,13 @@ class AsyncRedisUtil:
         )
 
     @classmethod
-    async def hincrby(cls, name, key, value=1, exp_of_none=None):
+    async def hincrby(
+        cls,
+        name: KeyT,
+        key: FieldT,
+        value: int = 1,
+        exp_of_none: ExpiryT = None,
+    ) -> any:
         return await cls._exp_of_none(
             name,
             key,
@@ -155,7 +188,13 @@ class AsyncRedisUtil:
         )
 
     @classmethod
-    async def hincrbyfloat(cls, name, key, value, exp_of_none=None):
+    async def hincrbyfloat(
+        cls,
+        name: KeyT,
+        key: FieldT,
+        value: float,
+        exp_of_none: ExpiryT = None,
+    ) -> any:
         return await cls._exp_of_none(
             name,
             key,
@@ -165,7 +204,12 @@ class AsyncRedisUtil:
         )
 
     @classmethod
-    async def incrby(cls, name, value=1, exp_of_none=None):
+    async def incrby(
+        cls,
+        name: KeyT,
+        value: int = 1,
+        exp_of_none: ExpiryT = None,
+    ) -> any:
         return await cls._exp_of_none(
             name,
             value,
@@ -174,9 +218,9 @@ class AsyncRedisUtil:
         )
 
     @classmethod
-    async def close(cls, inuse_connections: bool = False):
+    async def close(cls, inuse_connections: bool = False) -> None:
         await cls._pool.disconnect(inuse_connections=inuse_connections)
 
 
-async def get_async_redis():
+async def get_async_redis() -> ConnectionPool:
     return AsyncRedisUtil.get_pool()

@@ -1,5 +1,5 @@
 from math import ceil
-from typing import Any, Generic, TypeVar, Optional
+from typing import Generic, TypeVar, Optional
 from datetime import datetime
 from collections.abc import Sequence
 
@@ -29,9 +29,9 @@ class AesResponse(JSONResponse):
 
     def __init__(
         self,
-        content: Any = None,
+        content: dict = None,
         status_code: int = 200,
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         code = content.get("code", ResponseCodeEnum.success.value)
         context[ContextKeyEnum.response_code.value] = code
@@ -43,7 +43,7 @@ class AesResponse(JSONResponse):
             **kwargs,
         )
 
-    def render(self, content: Any) -> bytes:
+    def render(self, content: dict) -> bytes:
         # update responseTime
         content["responseTime"] = datetime_now().strftime(
             DATETIME_FORMAT_STRING,
@@ -84,7 +84,11 @@ class Resp(GenericModel, Generic[DataT]):
     #     return v
 
     @classmethod
-    def fail(cls, message: str, code: int = ResponseCodeEnum.failed.value):
+    def fail(
+        cls,
+        message: str,
+        code: int = ResponseCodeEnum.failed.value,
+    ) -> "Resp":
         return cls(code=code, message=message)
 
     class Config(DateTimeFormatConfig):
@@ -123,7 +127,7 @@ class PageResp(Resp, Generic[DataT]):
         )
 
 
-def generate_page_info(total_count, pager: Pager):
+def generate_page_info(total_count: int, pager: Pager) -> PageInfo:
     return PageInfo(
         total_page=ceil(total_count / pager.limit),
         total_count=total_count,

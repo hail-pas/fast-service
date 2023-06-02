@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import TypeVar, Optional
 from datetime import datetime, timedelta
 
 from tortoise import fields
@@ -7,14 +7,14 @@ from tortoise.expressions import Q
 from tortoise.backends.base.client import BaseDBAsyncClient
 
 from common.schemas import CURDPager
-from common.responses import generate_page_info
+from common.responses import PageInfo, generate_page_info
 
 # from tortoise.contrib.pydantic.creator import pydantic_model_creator, PydanticMeta
 
 MIN_DELETED_DATETIME = datetime.min + timedelta(days=1)
 
 
-def get_datetime_min():
+def get_datetime_min() -> datetime:
     return MIN_DELETED_DATETIME
 
 
@@ -59,6 +59,9 @@ class TimeStampModel(Model):
         await super().save(using_db, update_fields, force_create, force_update)
 
 
+BaseModelType = TypeVar("BaseModelType", bound="BaseModel")
+
+
 class BaseModel(UUIDPrimaryKeyModel, TimeStampModel):
     class Meta:
         abstract = True
@@ -68,8 +71,8 @@ class BaseModel(UUIDPrimaryKeyModel, TimeStampModel):
         cls,
         pager: CURDPager,
         *args: Q,
-        **kwargs: Any,
-    ):
+        **kwargs: any,
+    ) -> tuple[PageInfo, list[BaseModelType]]:
         queryset = cls.filter(*args, **kwargs)
         page_info = generate_page_info(await queryset.count(), pager)
         data = (

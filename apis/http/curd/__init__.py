@@ -106,11 +106,12 @@ async def update_create_data_clean(
     return cleaned_data, m2m_fields_data
 
 
-def default_filter():
-    @dataclass
-    class DefaultFilterSchema:
-        pass
+@dataclass
+class DefaultFilterSchema:
+    pass
 
+
+def default_filter() -> "DefaultFilterSchema":
     return DefaultFilterSchema
 
 
@@ -152,7 +153,7 @@ class CURDGenerator(Generic[T], APIRouter):
         update_route: Union[bool, DEPENDENCIES] = True,
         delete_one_route: Union[bool, DEPENDENCIES] = True,
         delete_all_route: Union[bool, DEPENDENCIES] = True,
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         self.db_model = db_model
         self.queryset = queryset
@@ -269,7 +270,7 @@ class CURDGenerator(Generic[T], APIRouter):
         endpoint: Callable[..., Any],
         dependencies: Union[bool, DEPENDENCIES],
         error_responses: Optional[list[HTTPException]] = None,
-        **kwargs: Any,
+        **kwargs,
     ) -> None:
         dependencies = [] if isinstance(dependencies, bool) else dependencies
         responses: Any = (
@@ -292,8 +293,8 @@ class CURDGenerator(Generic[T], APIRouter):
     def api_route(
         self,
         path: str,
-        *args: Any,
-        **kwargs: Any,
+        *args,
+        **kwargs,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         """Overrides and exiting route if it exists."""
         methods = kwargs["methods"] if "methods" in kwargs else ["GET"]
@@ -303,8 +304,8 @@ class CURDGenerator(Generic[T], APIRouter):
     def get(
         self,
         path: str,
-        *args: Any,
-        **kwargs: Any,
+        *args,
+        **kwargs,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         self.remove_api_route(path, ["Get"])
         return super().get(path, *args, **kwargs)
@@ -312,8 +313,8 @@ class CURDGenerator(Generic[T], APIRouter):
     def post(
         self,
         path: str,
-        *args: Any,
-        **kwargs: Any,
+        *args,
+        **kwargs,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         self.remove_api_route(path, ["POST"])
         return super().post(path, *args, **kwargs)
@@ -321,8 +322,8 @@ class CURDGenerator(Generic[T], APIRouter):
     def put(
         self,
         path: str,
-        *args: Any,
-        **kwargs: Any,
+        *args,
+        **kwargs,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         self.remove_api_route(path, ["PUT"])
         return super().put(path, *args, **kwargs)
@@ -330,8 +331,8 @@ class CURDGenerator(Generic[T], APIRouter):
     def delete(
         self,
         path: str,
-        *args: Any,
-        **kwargs: Any,
+        *args,
+        **kwargs,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         self.remove_api_route(path, ["DELETE"])
         return super().delete(path, *args, **kwargs)
@@ -346,12 +347,12 @@ class CURDGenerator(Generic[T], APIRouter):
             ):
                 self.routes.remove(route)
 
-    def _get_all(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
+    def _get_all(self, *args, **kwargs) -> Callable[..., Any]:
         async def route(
             request: Request,
             filter_: self.filter_schema = Depends(),
             pagination: CURDPager = self.pagination,
-        ):
+        ) -> PageResp[self.schema]:
             exclude_fields = getattr(filter_, "exclude_fields", [])
 
             extra_args = getattr(filter_, "extra_args", [])
@@ -407,11 +408,11 @@ class CURDGenerator(Generic[T], APIRouter):
 
         return route
 
-    def _get_one(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
+    def _get_one(self, *args, **kwargs) -> Callable[..., Any]:
         async def route(
             request: Request,
             id: str,
-        ):
+        ) -> Resp:
             model = await (await self.get_queryset(self, request)).get_or_none(
                 id=id,
             )
@@ -424,9 +425,9 @@ class CURDGenerator(Generic[T], APIRouter):
 
         return route
 
-    def _create(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
+    def _create(self, *args, **kwargs) -> Callable[..., Any]:
         @atomic("default")
-        async def route(request: Request, model: self.create_schema):  # type: ignore
+        async def route(request: Request, model: self.create_schema) -> Resp[self.retrieve_schema]:  # type: ignore
             data, m2m_data = await update_create_data_clean(
                 model.dict(),
                 self.db_model,
@@ -451,13 +452,13 @@ class CURDGenerator(Generic[T], APIRouter):
 
         return route
 
-    def _update(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
+    def _update(self, *args, **kwargs) -> Callable[..., Any]:
         @atomic("default")
         async def route(
             request: Request,
             id: str,
             model: self.update_schema,
-        ):  # type: ignore
+        ) -> Resp[self.retrieve_schema]:
             obj = await (await self.get_queryset(self, request)).get_or_none(
                 id=id,
             )
@@ -485,8 +486,8 @@ class CURDGenerator(Generic[T], APIRouter):
 
         return route
 
-    def _delete_one(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
-        async def route(request: Request, id: str):
+    def _delete_one(self, *args, **kwargs) -> Callable[..., Any]:
+        async def route(request: Request, id: str) -> Resp:
             await (await self.get_queryset(self, request)).filter(
                 id=id,
             ).delete()
@@ -494,11 +495,11 @@ class CURDGenerator(Generic[T], APIRouter):
 
         return route
 
-    def _batch_delete(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
+    def _batch_delete(self, *args, **kwargs) -> Callable[..., Any]:
         async def route(
             request: Request,
             ids: list[str] = Body(..., description="id列表"),
-        ):
+        ) -> Resp:
             await (await self.get_queryset(self, request)).filter(
                 id__in=ids,
             ).delete()

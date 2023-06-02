@@ -6,7 +6,7 @@ from apis.websocket.manage import ws_manager
 # @ws_app.websocket("/example")
 
 
-async def func_websocket_route(websocket: WebSocket, client_id: int):
+async def func_websocket_route(websocket: WebSocket, client_id: int) -> None:
     await ws_manager.connect(websocket)
     try:
         await ws_manager.send_privete_json(

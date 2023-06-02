@@ -1,5 +1,7 @@
 import sys
 
+from fastapi import FastAPI
+
 sys.path.append(".")  # 将当前目录加入到环境变量中
 
 import asyncio  # noqa
@@ -13,12 +15,12 @@ from conf.config import local_configs  # noqa
 
 
 class FastApiApplication(gunicorn.app.base.BaseApplication):
-    def __init__(self, app, options=None) -> None:
+    def __init__(self, app: FastAPI, options: dict | None = None) -> None:
         self.options = options or {}
         self.application = app
         super().__init__()
 
-    def load_config(self):
+    def load_config(self) -> None:
         config = {
             key: value
             for key, value in self.options.items()
@@ -27,11 +29,11 @@ class FastApiApplication(gunicorn.app.base.BaseApplication):
         for key, value in config.items():
             self.cfg.set(key.lower(), value)
 
-    def load(self):
+    def load(self) -> FastAPI:
         return self.application
 
 
-def post_fork(server, worker):
+def post_fork(server: any, worker: any) -> None:
     # Important: The import of skywalking should be inside the post_fork function
     # if local_configs.PROJECT.SKYWALKINGT_SERVER:
     #     print({"level": "INFO", "message": "Skywalking agent started"})
@@ -57,7 +59,7 @@ def post_fork(server, worker):
     pass
 
 
-async def run_migrations():
+async def run_migrations() -> None:
     command = Command(
         tortoise_config=local_configs.RELATIONAL.tortoise_orm_config,
         app="master",

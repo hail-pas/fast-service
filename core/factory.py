@@ -27,7 +27,7 @@ class MainApp(FastAPI):
         return local_configs
 
 
-def amount_apps(main_app: FastAPI):
+def amount_apps(main_app: FastAPI) -> None:
     from apis import roster
 
     for app_or_router, prefix_path, name in roster:
@@ -40,7 +40,7 @@ def amount_apps(main_app: FastAPI):
             main_app.include_router(app_or_router)
 
 
-def setup_middleware(main_app: FastAPI):
+def setup_middleware(main_app: FastAPI) -> None:
     """./middlewares 文件中的定义中间件
     :param main_app:
     :return:
@@ -70,7 +70,7 @@ def setup_middleware(main_app: FastAPI):
             logger.error(f"Set Middleware Failed: {middle_fc}, Encounter {e}")
 
 
-def setup_static_app(main_app: FastAPI, current_settings: LocalConfig):
+def setup_static_app(main_app: FastAPI, current_settings: LocalConfig) -> None:
     """Init static app
     :param main_app:
     :param current_settings:
@@ -87,7 +87,7 @@ def setup_static_app(main_app: FastAPI, current_settings: LocalConfig):
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> None:
     # 初始化及退出清理
     # redis
     AsyncRedisUtil.init()
@@ -122,7 +122,7 @@ async def lifespan(app: FastAPI):
 #         await AsyncRedisUtil.close()
 
 
-def create_app(current_settings: LocalConfig):
+def create_app(current_settings: LocalConfig) -> FastAPI:
     main_app = MainApp(
         debug=current_settings.PROJECT.DEBUG,
         title=current_settings.PROJECT.NAME,

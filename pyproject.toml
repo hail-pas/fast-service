@@ -44,7 +44,6 @@ rich = "13.3.5"
 
 [tool.poetry.dev-dependencies]
 # poetry install --no-dev
-# pre-commit = "3.3.2"
 pytest-asyncio = "0.21.0"
 mypy = "1.1.1"
 black = "23.1.0"
@@ -90,7 +89,7 @@ select = [
     "UP",  # pyupgrade
     # "D",   # pydocstyle
     "B",    # flake8-bugbear
-    # "ANN",  # annotation
+    "ANN",  # annotation
     "ASYNC",
     "COM",
     "C4",
@@ -114,7 +113,13 @@ select = [
     "FLY",
     "NPY",
 ]
-ignore = ["B008"]  # function call in argument defaults, like Query, Depends. need ignore
+ignore = [
+    "B008",  # function call in argument defaults, like Query, Depends. need ignore
+    "ANN101",  # type annotation for self/cls
+    "ANN102",  # type annotation for cls in classmethod
+    "ANN002",  # annotation for args
+    "ANN003",  # annotation for kwargs
+]
 # file ignore -> # ruff: noqa
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
@@ -144,7 +149,8 @@ exclude = [
     "dist",
     "node_modules",
     "venv",
-    "storages/relational/migrate/versions/"
+    "storages/relational/migrate/versions/",
+    "tests",
 ]
 per-file-ignores = {}
 
@@ -177,3 +183,7 @@ max-complexity = 10
 # 1. packages directory
 # 2. add pyproject.toml to packages directory
 # 3. pip download -d /opt/pypiserver/ -r ./requirements.txt
+
+
+# strict error
+# pip install poetry==1.5.1

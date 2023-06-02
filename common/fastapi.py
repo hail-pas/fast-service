@@ -2,12 +2,13 @@ import json
 import asyncio
 import email.message
 from enum import Enum
-from typing import Any, Union, Callable, Optional
+from typing import Any, Union, TypeVar, Callable, Optional
 from contextlib import AsyncExitStack
 from collections.abc import Sequence, Coroutine
 
 from loguru import logger
 from fastapi import FastAPI, params
+from pydantic import BaseModel
 from fastapi.utils import generate_unique_id, is_body_allowed_for_status_code
 from fastapi.routing import (
     APIRoute,
@@ -65,7 +66,7 @@ class AuthorizedRequest(Request):
 async def serialize_response(
     *,
     field: Optional[ModelField] = None,
-    response_content: Any,
+    response_content: any,
     include: Optional[Union[SetIntStr, DictIntStrAny]] = None,
     exclude: Optional[Union[SetIntStr, DictIntStrAny]] = None,
     by_alias: bool = True,
@@ -73,7 +74,7 @@ async def serialize_response(
     exclude_defaults: bool = False,
     exclude_none: bool = False,
     is_coroutine: bool = True,
-) -> Any:
+) -> any:
     if isinstance(response_content, (Resp, PageResp)):
         # 兼容 Resp 和 PageResp
         value = response_content.dict()
@@ -127,6 +128,9 @@ async def serialize_response(
     return jsonable_encoder(response_content)
 
 
+BaseModelType = TypeVar("BaseModelType", bound=BaseModel)
+
+
 class RespSchemaAPIRouter(APIRoute):
     # default
 
@@ -135,7 +139,7 @@ class RespSchemaAPIRouter(APIRoute):
         path: str,
         endpoint: Callable[..., Any],
         *,
-        response_model: Any = Default(None),
+        response_model: BaseModelType = Default(None),
         status_code: Optional[int] = None,
         tags: Optional[list[Union[str, Enum]]] = None,
         dependencies: Optional[Sequence[params.Depends]] = None,
@@ -374,7 +378,7 @@ class RespSchemaAPIRouter(APIRoute):
         )
 
 
-def setup_sub_app(app: FastAPI, app_prefix: str):
+def setup_sub_app(app: FastAPI, app_prefix: str) -> None:
     from conf.config import local_configs
 
     app.router.route_class = RespSchemaAPIRouter
@@ -393,7 +397,7 @@ def setup_sub_app(app: FastAPI, app_prefix: str):
     return app
 
 
-def setup_sentry(current_settings: LocalConfig):
+def setup_sentry(current_settings: LocalConfig) -> None:
     """Init sentry
     :param current_settings:
     :return:

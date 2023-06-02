@@ -15,7 +15,7 @@ class AccountFilterSchema:
         description=f"状态, {enums.StatusEnum.dict}",
     )
 
-    def __post_init__(self, *args, **kwargs):
+    def __post_init__(self, *args, **kwargs) -> None:
         # validate or add custom field
         self.extra_args = []
         self.extra_kwargs = {}
@@ -25,7 +25,7 @@ class AccountFilterSchema:
     #     if v:
     #         return v.split(",")
 
-    def __post_init_post_parse__(self):
+    def __post_init_post_parse__(self) -> None:
         pass
 
 
@@ -36,7 +36,7 @@ class ResourceFilterSchema:
     parent: str = Query(None, description="父级资源id")
     rely_on: str = Query(None, description="依赖资源id")
 
-    def __post_init__(self, *args, **kwargs):
+    def __post_init__(self, *args, **kwargs) -> None:
         # validate or add custom field
         self.extra_args = []
         self.extra_kwargs = {}

@@ -1,13 +1,12 @@
 import os
+import contextlib
 
-from loguru import logger
 from pydantic import BaseModel
 from kubernetes import client, config
 
-try:
+with contextlib.suppress(Exception):
     config.load_incluster_config()
-except Exception:
-    logger.warning("Kubernets load_incluster_config failed")
+
 
 batch_v1_api = client.BatchV1Api()
 core_v1_api = client.CoreV1Api()

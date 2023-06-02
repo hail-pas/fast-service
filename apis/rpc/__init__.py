@@ -25,6 +25,6 @@ rpc_server.add_insecure_port("[::]:50051")
 hello_pb2_grpc.add_HelloServicer_to_server(HelloServicer(), rpc_server)
 
 
-async def serve():
+async def serve() -> None:
     await rpc_server.start()
     await rpc_server.wait_for_termination()

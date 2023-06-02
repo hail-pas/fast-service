@@ -8,7 +8,7 @@ from typing import Union
 from extensions.cpp.eval.literal_eval import py_to_pickle, py_to_pickle_tmp
 
 
-def assert_equal(a, b, _msg=""):
+def assert_equal(a: any, b: any, _msg: str = "") -> None:
     assert type(a) == type(b)
     if isinstance(a, dict):
         assert len(a) == len(b)
@@ -23,7 +23,7 @@ def assert_equal(a, b, _msg=""):
         assert a == b, f"{a!r} != {b!r} in {_msg}"
 
 
-def check(s: Union[str, bytes]):
+def check(s: Union[str, bytes]) -> None:
     print("Check:", repr(s) if len(s) <= 80 else repr(s[:70]) + "...")
     a = eval(s)
     b = ast.literal_eval(s if isinstance(s, str) else s.decode("utf8"))
@@ -38,7 +38,7 @@ def check(s: Union[str, bytes]):
     assert_equal(b, c)
 
 
-def tests(*, fast=True):
+def tests(*, fast: bool = True) -> None:
     checks = [
         "0",
         "1",
@@ -75,7 +75,7 @@ def tests(*, fast=True):
         print(f"({txt_fn_gz} does not exist)")
 
 
-def main():
+def main() -> None:
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--fast", action="store_true")
     args = arg_parser.parse_args()

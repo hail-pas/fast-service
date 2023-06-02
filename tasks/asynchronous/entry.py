@@ -13,7 +13,7 @@ from common.command.shell import init_ctx
 from storages.relational.models import Task
 
 
-async def run_task(task_id: str, param_id: str):
+async def run_task(task_id: str, param_id: str) -> any:
     # init context
     await init_ctx()
     setup_sentry(local_configs)  # sentry

@@ -18,7 +18,7 @@ def generate_random_string(
     length: int,
     all_digits: bool = False,
     excludes: list = None,
-):
+) -> str:
     """生成任意长度字符串."""
     if excludes is None:
         excludes = []
@@ -31,7 +31,7 @@ def generate_random_string(
     return "".join(random.sample(all_char, length))
 
 
-def get_client_ip(request: Request):
+def get_client_ip(request: Request) -> str:
     """获取客户端真实ip
     :param request:
     :return:
@@ -42,15 +42,17 @@ def get_client_ip(request: Request):
     return request.client.host
 
 
-def datetime_now():
+def datetime_now() -> datetime.datetime:
     # 返回带有时区信息的时间
     return datetime.datetime.now(
         tz=ZoneInfo(local_configs.RELATIONAL.TIMEZONE or "Asia/Shanghai"),
     )
 
 
-def commify(n: Union[int, float]):
+def commify(n: Union[int, float]) -> str | None:
     """Add commas to an integer `n`.
+    raise:
+        TypeError: type check
     >>> commify(1)
     '1'
     >>> commify(123)
@@ -102,7 +104,10 @@ def commify(n: Union[int, float]):
     return prefix + out
 
 
-def mapper(func, ob: Union[list, dict]):
+def mapper(
+    func: Callable[[list | dict | Any], list | dict | Any],
+    ob: Union[list, dict],
+) -> list | dict | Any:
     """Map func for list or dict."""
     if isinstance(ob, list):
         result = []
@@ -119,25 +124,25 @@ def mapper(func, ob: Union[list, dict]):
 
 
 def seconds_to_format_str(
-    seconds,
+    seconds: int,
     format_str: str = DATETIME_FORMAT_STRING,
     offset: Union[float, int] = 1,
     tzinfo: ZoneInfo = ZoneInfo(
         local_configs.RELATIONAL.TIMEZONE or "Asia/Shanghai",
     ),
-):
+) -> str:
     """时间戳装换为对应格式化时间, 需要传秒级时间戳 或者 配合offset转换成秒级."""
     v = datetime.datetime.fromtimestamp(seconds * offset, tz=tzinfo)
     return v.strftime(format_str)
 
 
 def format_str_to_seconds(
-    value,
+    value: datetime.datetime | str,
     format_str: str = DATETIME_FORMAT_STRING,
     tzinfo: ZoneInfo = ZoneInfo(
         local_configs.RELATIONAL.TIMEZONE or "Asia/Shanghai",
     ),
-):
+) -> int:
     """格式化时间转换为对应时区的时间戳."""
     if isinstance(value, datetime.datetime):
         value = value.replace(tzinfo=tzinfo)
@@ -148,7 +153,10 @@ def format_str_to_seconds(
     return int(value.timestamp())
 
 
-def filter_dict(dict_obj: dict, callback: Callable[[Hashable, Any], dict]):
+def filter_dict(
+    dict_obj: dict,
+    callback: Callable[[Hashable, Any], dict],
+) -> dict:
     """适用于字典的filter."""
     new_dict = {}
     for key, value in dict_obj.items():
@@ -157,11 +165,11 @@ def filter_dict(dict_obj: dict, callback: Callable[[Hashable, Any], dict]):
     return new_dict
 
 
-def flatten_list(element):
+def flatten_list(element: any) -> list[any]:
     """Iterable 递归展开成一级列表."""
     flat_list = []
 
-    def _flatten_list(e):
+    def _flatten_list(e: any) -> None:
         if type(e) in [list, set, tuple]:
             for item in e:
                 _flatten_list(item)

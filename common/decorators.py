@@ -1,7 +1,7 @@
 import sys
 import enum
 import threading
-from typing import Union
+from typing import Union, Callable
 from functools import wraps
 
 from common.types import _classproperty
@@ -10,17 +10,17 @@ classproperty = _classproperty
 
 
 class SingletonDecorator:
-    def __init__(self, cls) -> None:
+    def __init__(self, cls: type) -> None:
         self.cls = cls
         self.instance = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> any:
         if self.instance is None:
             self.instance = self.cls(*args, **kwargs)
         return self.instance
 
 
-def timelimit(timeout: Union[int, float]):
+def timelimit(timeout: Union[int, float]) -> Callable:
     """A decorator to limit a function to `timeout` seconds, raising `TimeoutError`
     if it takes longer.
         >>> import time
@@ -39,9 +39,9 @@ def timelimit(timeout: Union[int, float]):
     inspired by <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/473878>.
     """
 
-    def _1(function):
+    def _1(function: Callable) -> Callable:
         @wraps(function)
-        def _2(*args, **kw):
+        def _2(*args, **kw) -> any:
             class Dispatch(threading.Thread):
                 def __init__(self) -> None:
                     threading.Thread.__init__(self)
@@ -51,7 +51,7 @@ def timelimit(timeout: Union[int, float]):
                     self.setDaemon(True)
                     self.start()
 
-                def run(self):
+                def run(self) -> None:
                     try:
                         self.result = function(*args, **kw)
                     except Exception:
@@ -70,8 +70,8 @@ def timelimit(timeout: Union[int, float]):
     return _1
 
 
-def extend_enum(*inherited_enums):
-    def wrapper(added_enum):
+def extend_enum(*inherited_enums) -> Callable[[enum.Enum], enum.Enum]:
+    def wrapper(added_enum: enum.Enum) -> enum.Enum:
         joined = {}
         for inherited_enum in inherited_enums:
             for item in inherited_enum:

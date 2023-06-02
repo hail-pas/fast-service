@@ -1,4 +1,5 @@
 import random
+from collections.abc import Iterable
 
 import grpc
 
@@ -9,7 +10,7 @@ channel = grpc.insecure_channel("localhost:50055")
 stub = hello_pb2_grpc.HelloStub(channel)
 
 
-def request_iterator():
+def request_iterator() -> Iterable[HelloIn]:
     for _ in range(10):
         num = random.choice(range(10))  # noqa
         temp = generate_hello_in()
@@ -18,7 +19,7 @@ def request_iterator():
         yield temp
 
 
-def generate_hello_in():
+def generate_hello_in() -> HelloIn:
     hello_in = HelloIn()
     hello_in.name = "phoenix"
     hello_in.age = 26
@@ -27,7 +28,7 @@ def generate_hello_in():
     return hello_in
 
 
-def call_simple():
+def call_simple() -> None:
     # Simple
     simple_res = stub.HelloRPC(generate_hello_in())
     # async
@@ -36,25 +37,25 @@ def call_simple():
     print("simple_res: ", simple_res)
 
 
-def call_list():
+def call_list() -> None:
     multi_res = stub.MultiHelloRPC(generate_hello_in())
     for i in multi_res.replies:
         print("Multi: ", i)
 
 
-def call_resp_stream():
+def call_resp_stream() -> None:
     stream_res = stub.ResStreamHelloRPC(generate_hello_in())
     for i in stream_res:
         print("Stream Res: ", i)
 
 
-def call_reqs_stream():
+def call_reqs_stream() -> None:
     stream_req = stub.ReqStreamHelloRPC(request_iterator())
     for i in stream_req.replies:
         print("Stream Req: ", i)
 
 
-def call_bi_stream():
+def call_bi_stream() -> None:
     bi_stream = stub.BiStreamHelloRPC(request_iterator())
     for i in bi_stream:
         print("Bi Stream: ", i)

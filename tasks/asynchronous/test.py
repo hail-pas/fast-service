@@ -4,7 +4,7 @@ from tasks import task_manager
 
 
 @task_manager.task()
-async def test():
+async def test() -> None:
     print("test")
 
 

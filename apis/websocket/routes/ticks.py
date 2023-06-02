@@ -1,10 +1,10 @@
 import asyncio
-from typing import Any
 
 from loguru import logger
 from fastapi import WebSocket
 from starlette.endpoints import WebSocketEndpoint
 
+from common.types import CommonType
 from storages.redis import AsyncRedisUtil
 
 
@@ -39,7 +39,7 @@ class WebSocketTicks(WebSocketEndpoint):
         )
         await AsyncRedisUtil.incrby("total_ws_conn", -1)
 
-    async def on_receive(self, websocket: WebSocket, data: Any) -> None:
+    async def on_receive(self, websocket: WebSocket, data: CommonType) -> None:
         await websocket.send_json({"Message: ": data})
 
     async def tick(self, websocket: WebSocket) -> None:

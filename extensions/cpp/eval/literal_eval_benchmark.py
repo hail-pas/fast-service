@@ -13,7 +13,7 @@ from extensions.cpp.eval.base import BASE_DIR
 from extensions.cpp.eval.literal_eval import py_to_pickle
 
 
-def main():
+def main() -> None:
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument("--only-py-to-pickle", action="store_true")
     args = arg_parser.parse_args()

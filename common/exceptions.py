@@ -26,7 +26,10 @@ class ApiException(Exception):
         self.message = message
 
 
-async def api_exception_handler(request: Request, exc: ApiException):
+async def api_exception_handler(
+    request: Request,
+    exc: ApiException,
+) -> AesResponse:
     return AesResponse(
         content={
             "code": exc.code,
@@ -36,7 +39,10 @@ async def api_exception_handler(request: Request, exc: ApiException):
     )
 
 
-async def unexpected_exception_handler(request: Request, exc: Exception):
+async def unexpected_exception_handler(
+    request: Request,
+    exc: Exception,
+) -> AesResponse:
     return AesResponse(
         content={
             "code": ResponseCodeEnum.internal_error.value,
@@ -46,7 +52,10 @@ async def unexpected_exception_handler(request: Request, exc: Exception):
     )
 
 
-async def http_exception_handler(request: Request, exc: HTTPException):
+async def http_exception_handler(
+    request: Request,
+    exc: HTTPException,
+) -> AesResponse:
     """HttpException 状态码非 200 的错误
     :param request:
     :param exc:
@@ -60,7 +69,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 async def validation_exception_handler(
     request: Request,
     exc: RequestValidationError,
-):
+) -> AesResponse:
     """参数校验错误."""
     logger.bind(json=True, name="validation_exception_handler").info(exc.body)
     try:
@@ -103,7 +112,7 @@ roster = [
 ]
 
 
-def setup_exception_handlers(main_app: FastAPI):
+def setup_exception_handlers(main_app: FastAPI) -> None:
     from common.exceptions import roster
 
     for exc, handler in roster:

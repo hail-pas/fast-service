@@ -48,7 +48,7 @@ class AccountCreate(
     roles: list[uuid.UUID] = Field(..., description="角色id列表")
 
     @validator("password")
-    def gen_password_hash(cls, v):
+    def gen_password_hash(cls, v: str) -> str:
         return PasswordUtil.get_password_hash(v)
 
 

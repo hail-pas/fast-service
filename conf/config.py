@@ -7,6 +7,7 @@ from functools import lru_cache
 
 import ujson
 from pydantic import BaseModel, BaseSettings, validator
+from pydantic.env_settings import SettingsSourceCallable
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -42,14 +43,14 @@ class Relational(HostAndPort):
     TIMEZONE: Optional[str] = None
 
     @property
-    def url(self):
+    def url(self) -> str:
         pkg = "asyncpg"
         if self.TYPE == "mysql":
             pkg = "aiomysql"
         return f"{self.TYPE}+{pkg}://{self.USERNAME}:{self.PASSWORD}@{self.HOST}:{self.PORT}/{self.DB}"  # noqa
 
     @property
-    def tortoise_orm_config(self):
+    def tortoise_orm_config(self) -> dict:
         # echo = (
         #     True if ENVIRONMENT == EnvironmentEnum.development.value else False
         # )
@@ -174,7 +175,7 @@ class Project(BaseModel):
         cls,
         v: Optional[str],
         values: dict[str, Any],
-    ):  # noqa
+    ) -> str:
         if "ENVIRONMENT" in values:
             assert not (
                 v and values["ENVIRONMENT"] == EnvironmentEnum.production.value
@@ -251,10 +252,10 @@ class LocalConfig(BaseSettings):
         @classmethod
         def customise_sources(
             cls,
-            init_settings,
-            env_settings,
-            file_secret_settings,  # noqa
-        ):
+            init_settings: SettingsSourceCallable,
+            env_settings: SettingsSourceCallable,
+            file_secret_settings: SettingsSourceCallable,
+        ) -> tuple[SettingsSourceCallable, ...]:
             def json_config_settings_source(
                 settings: BaseSettings,
             ) -> dict[str, Any]:
@@ -268,6 +269,7 @@ class LocalConfig(BaseSettings):
             return (
                 init_settings,
                 json_config_settings_source,
+                env_settings,
                 file_secret_settings,
             )
 

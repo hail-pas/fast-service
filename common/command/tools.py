@@ -32,7 +32,7 @@ FILES = [
 def copy_project(
     name: str = typer.Option(default=None, help="项目名称"),
     dest: str = typer.Option(default=None, help="目标路径"),
-):
+) -> None:
     if not (name and dest):
         print("必须指定项目名称name和目标路径dest")
         return
@@ -54,7 +54,7 @@ def copy_project(
 
     dest.mkdir()
 
-    def copy_file_in_dir(src_path: pathlib.Path, is_sub: bool = False):
+    def copy_file_in_dir(src_path: pathlib.Path, is_sub: bool = False) -> None:
         if "__pycache__" in str(src_path) or ".DS_Store" in str(src_path):
             return
         all_need = os.listdir(src_path)

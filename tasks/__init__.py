@@ -2,7 +2,7 @@ import os
 import re
 import uuid
 import inspect
-from typing import Union, Optional
+from typing import Union, Callable, Optional
 
 import yaml
 import ujson
@@ -46,7 +46,7 @@ async def _load_or_create_task(task_proxy: "TaskProxy") -> tuple[bool, str]:
 class TaskProxy:
     file_path: str
     func_name: str
-    func: callable
+    func: Callable
     description: str
     type_: TaskTypeEnum
     cron: Optional[str]
@@ -55,7 +55,7 @@ class TaskProxy:
 
     def __init__(
         self,
-        func: callable,
+        func: Callable,
         description: str,
         type_: TaskTypeEnum,
         cron: Optional[str],
@@ -73,10 +73,10 @@ class TaskProxy:
         self.cron = cron
         self.enabled = enabled
 
-    async def __call__(self, *args, **kwargs):
+    async def __call__(self, *args, **kwargs) -> any:
         return await self.func(*args, **kwargs)
 
-    async def delay(self, *args, **kwargs):
+    async def delay(self, *args, **kwargs) -> str:
         from storages.redis import AsyncRedisUtil, keys
 
         # save params
@@ -122,7 +122,10 @@ class TaskProxy:
 
         return config.name
 
-    def generate_yaml_body(self, config: Union[JobConfig, CronJobConfig]):
+    def generate_yaml_body(
+        self,
+        config: Union[JobConfig, CronJobConfig],
+    ) -> any:
         yaml_path = (
             JOB_TEMPLATE
             if self.type_ is TaskTypeEnum.asynchronous
@@ -166,7 +169,7 @@ class TaskManager:
         cron: str = "",
         enabled: bool = True,
     ):
-        def _1(func):
+        def _1(func: Callable) -> TaskProxy:
             if not inspect.iscoroutinefunction(func):
                 raise UsageError(
                     f"Task-{func.__name__} is not Awaitable Callable!",
@@ -189,8 +192,8 @@ class TaskManager:
         return _1
 
     @classmethod
-    def delete_job(cls, job_name: str):
-        batch_v1_api.delete_namespaced_job(
+    def delete_job(cls, job_name: str) -> any:
+        return batch_v1_api.delete_namespaced_job(
             name=job_name,
             namespace=NAMESPACE,
             body=client.V1DeleteOptions(
@@ -200,8 +203,8 @@ class TaskManager:
         )
 
     @classmethod
-    def delete_cronjob(cls, job_name: str):
-        batch_v1_api.delete_namespaced_cron_job(
+    def delete_cronjob(cls, job_name: str) -> any:
+        return batch_v1_api.delete_namespaced_cron_job(
             name=job_name,
             namespace=NAMESPACE,
             body=client.V1DeleteOptions(

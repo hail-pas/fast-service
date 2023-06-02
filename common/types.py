@@ -1,8 +1,26 @@
 import enum
 import uuid
+from typing import TypeVar, Callable
 from datetime import datetime
+from collections.abc import Hashable
 
 from pydantic import BaseModel
+
+CommonType = TypeVar(
+    "CommonType",
+    int,
+    float,
+    str,
+    bool,
+    list,
+    tuple,
+    set,
+    dict,
+    bytes,
+    bytearray,
+    memoryview,
+    type,
+)
 
 
 class ClassPropertyDescriptor:
@@ -10,25 +28,29 @@ class ClassPropertyDescriptor:
         self.fget = fget  # noqa
         self.fset = fset  # noqa
 
-    def __get__(self, obj, klass=None):
+    def __get__(
+        self,
+        obj: CommonType,
+        klass: CommonType | None = None,
+    ) -> CommonType:
         if klass is None:
             klass = type(obj)
         return self.fget.__get__(obj, klass)()
 
-    def __set__(self, obj, value):
+    def __set__(self, obj: CommonType, value: CommonType) -> None:
         if not self.fset:
             raise AttributeError("can't set attribute")
         type_ = type(obj)
-        return self.fset.__get__(obj, type_)(value)
+        self.fset.__set__(obj, type_)(value)
 
-    def setter(self, func):
+    def setter(self, func: Callable) -> "ClassPropertyDescriptor":
         if not isinstance(func, (classmethod, staticmethod)):
             func = classmethod(func)
         self.fset = func  # noqa
         return self
 
 
-def _classproperty(func):
+def _classproperty(func: Callable) -> ClassPropertyDescriptor:
     """
     类属性
     """
@@ -40,33 +62,38 @@ def _classproperty(func):
 
 class MyEnum(enum.Enum):
     @_classproperty
-    def dict(cls):
+    def dict(cls) -> dict[str | int, str]:
         return {item.value: item.label for item in cls}
 
     @_classproperty
-    def labels(cls):
+    def labels(cls) -> list[str]:
         return [item.label for item in cls]
 
     @_classproperty
-    def values(cls):
+    def values(cls) -> list[str | int]:
         return [item.value for item in cls]
 
     @_classproperty
-    def choices(cls):
+    def choices(cls) -> list[tuple[str | int, str]]:
         return [(item.value, item.label) for item in cls]
 
     @_classproperty
-    def help_text(cls):
+    def help_text(cls) -> str:
         description = ""
         for k, v in cls.dict.items():
             description = f"{description}、{k}-{v}"
         return f"choices: {description}"
 
     @property
-    def label(self):
+    def label(self) -> str:
         return self._label
 
-    def _generate_next_value_(name, start, count, last_values) -> str:  # type: ignore
+    def _generate_next_value_(
+        name: str,
+        start: str | int,
+        count: int,
+        last_values: list[int | str],
+    ) -> str:  # type: ignore
         """
         Uses the name as the automatic value, rather than an integer
 
@@ -76,7 +103,7 @@ class MyEnum(enum.Enum):
 
 
 class IntEnumMore(int, MyEnum):
-    def __new__(cls, value, label):
+    def __new__(cls, value: int, label: str) -> "IntEnumMore":
         obj = int.__new__(cls)
         obj._value_ = value
         obj._label = label
@@ -92,7 +119,7 @@ class IntEnumMore(int, MyEnum):
 
 
 class StrEnumMore(str, MyEnum):
-    def __new__(cls, value, label):
+    def __new__(cls, value: str, label: str) -> "StrEnumMore":
         obj = str.__new__(cls)
         obj._value_ = value
         obj._label = label
@@ -113,7 +140,7 @@ class Map(dict):
     m = Map({'first_name': 'Eduardo'}, last_name='Pool', age=24, sports=['Soccer'])
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         for arg in args:
             if isinstance(arg, dict):
@@ -124,20 +151,20 @@ class Map(dict):
             for k, v in kwargs.items():
                 self[k] = v
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> CommonType:
         return self.get(attr)
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: Hashable, value: CommonType) -> None:
         self.__setitem__(key, value)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: Hashable, value: CommonType) -> None:
         super().__setitem__(key, value)
         self.__dict__.update({key: value})
 
-    def __delattr__(self, item):
+    def __delattr__(self, item: Hashable) -> None:
         self.__delitem__(item)
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: Hashable) -> None:
         super().__delitem__(key)
         del self.__dict__[key]
 

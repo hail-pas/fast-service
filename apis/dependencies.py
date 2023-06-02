@@ -1,5 +1,5 @@
 import time
-from typing import Optional, Annotated
+from typing import Callable, Optional, Annotated
 from urllib.parse import unquote
 
 from jose import ExpiredSignatureError
@@ -89,7 +89,9 @@ def paginate(
     search_fields: Optional[set],
     list_schema: BaseModel,
     max_limit: Optional[int],
-):
+) -> Callable[
+    [PositiveInt, PositiveInt, str, set[str], Optional[set[str]]], CURDPager,
+]:
     def get_pager(
         page: PositiveInt = Query(default=1, example=1, description="第几页"),
         size: PositiveInt = Query(default=10, example=10, description="每页数量"),
@@ -109,7 +111,7 @@ def paginate(
             default=set(),
             description=f"返回字段, 多个字段用英文逗号分隔. 可选字段: {', '.join(list_schema.__fields__.keys())}",
         ),
-    ):
+    ) -> CURDPager:
         if max_limit:
             size = min(size, max_limit)
         for field in order_by:
@@ -190,7 +192,7 @@ async def api_key_required(
             auto_error=False,
         ),
     ),
-):
+) -> None:
     if not api_key:
         raise ApiException(
             message=ApikeyMissingMsg,
@@ -235,7 +237,7 @@ async def sign_check(
         description="秒级时间戳",
     ),
     x_signature: str = Header(..., example="sign", description="签名"),
-):
+) -> None:
     if request.method in ["GET", "DELETE"]:
         sign_str = request.scope["query_string"].decode()
         sign_str = unquote(sign_str)
@@ -263,7 +265,7 @@ class CheckAllowedHost:
             allowed_hosts = {"*"}
         self.allowed_hosts = allowed_hosts
 
-    def __call__(self, request: Request):
+    def __call__(self, request: Request) -> None:
         if "*" in local_configs.SERVER.ALLOW_HOSTS:
             return
         caller_host = get_client_ip(request)

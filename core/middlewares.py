@@ -6,6 +6,7 @@ from starlette_context import request_cycle_context
 
 # from fastapi import Response
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette_context.errors import MiddleWareValidationError
 from starlette.middleware.base import (
     RequestResponseEndpoint,
@@ -56,7 +57,7 @@ class LogWithContextMiddleware(RawContextMiddleware):
 async def profile_request(
     request: Request,
     call_next: RequestResponseEndpoint,
-):
+) -> Response:
     need_profile = request.query_params.get("profile", False)
     secret = request.query_params.get("secret", "")
     if need_profile and secret == local_configs.PROFILING.SECRET:

@@ -16,12 +16,12 @@ router = APIRouter(prefix="/common", route_class=RespSchemaAPIRouter)
     response_model=Resp[Union[dict, tuple[tuple]]],
 )
 async def enum_content(
-    enum_content=Depends(enums.get_enum_content),
+    enum_content: dict = Depends(enums.get_enum_content),
     format: enums.RespFormatEnum = Query(
         default=enums.RespFormatEnum.json_,
         description="返回格式",
     ),
-):
+) -> Resp[Union[dict, tuple]]:
     data = enum_content
     if format == enums.RespFormatEnum.list_:
         data = []

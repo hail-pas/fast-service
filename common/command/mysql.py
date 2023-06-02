@@ -12,7 +12,7 @@ shell = partial(subprocess.run, shell=True)  # noqa
 
 
 @db_typer.command("create", short_help="创建数据库")
-def create_db():
+def create_db() -> None:
     shell(
         "mysql -h {host} --port={port} -u{user} -p{password} -e "
         '"CREATE DATABASE IF NOT EXISTS \\`{database}\\` default "'
@@ -25,7 +25,7 @@ def create_db():
 
 
 @db_typer.command("drop", short_help="删除数据库")
-def drop_db():
+def drop_db() -> None:
     if local_configs.PROJECT.ENVIRONMENT == "Production":
         return "Forbidden operation in Production Environment"
     shell(
@@ -40,7 +40,7 @@ def drop_db():
 
 
 @db_typer.command("init-config", short_help="初始化数据库配置")
-def init_config():
+def init_config() -> None:
     shell(
         "aerich init -t storages.relational.migrate.env.TORTOISE_ORM_CONFIG"
         "  --location storages/relational/migrate/versions",
@@ -48,14 +48,14 @@ def init_config():
 
 
 @db_typer.command("init", short_help="初始化数据库")
-def init_db():
+def init_db() -> None:
     shell("aerich init-db")
 
 
 @db_typer.command("migrate", short_help="生成迁移文件")
 def db_make_migrations(
     message: str = typer.Option(default=None, help="迁移文件备注"),
-):
+) -> None:
     proc = subprocess.Popen(
         shlex.split(f"aerich migrate --name {message}"),  # noqa
         stderr=subprocess.PIPE,
@@ -68,20 +68,20 @@ def db_make_migrations(
 
 
 @db_typer.command("upgrade", short_help="执行迁移文件")
-def db_upgrade():
+def db_upgrade() -> None:
     shell("aerich upgrade")
 
 
 @db_typer.command("head", short_help="最新版本")
-def db_migration_head():
+def db_migration_head() -> None:
     shell("aerich heads")
 
 
 @db_typer.command("history", short_help="历史版本")
-def db_history():
+def db_history() -> None:
     shell("aerich history")
 
 
 @db_typer.command("downgrade", short_help="回退版本")
-def db_downgrade():
+def db_downgrade() -> None:
     shell("aerich downgrade")
