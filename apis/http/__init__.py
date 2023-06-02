@@ -31,9 +31,6 @@ class HealthCheck(BaseModel):
     response_model=Resp[HealthCheck],
 )
 async def index() -> Resp[HealthCheck]:
-    from storages.redis import AsyncRedisUtil
-
-    await AsyncRedisUtil._redis.keys("ResearchDtcAnalysis*")
     return Resp[HealthCheck](
         message="OK",
         data={
