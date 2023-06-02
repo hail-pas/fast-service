@@ -29,18 +29,16 @@ class AESUtil:
         self.key = base64.b64decode(key.encode())
 
     def encrypt_data(self, data: str) -> str:
-        data = data.encode()
         aes = AES.new(self.key, self.mode)
-        pad_data = pad(data, AES.block_size, style=self.style)
+        pad_data = pad(data.encode(), AES.block_size, style=self.style)
         return str(
             base64.encodebytes(aes.encrypt(pad_data)),
             encoding="utf8",
         ).replace("\n", "")
 
     def decrypt_data(self, data: str) -> str:
-        data = data.encode()
         aes = AES.new(self.key, self.mode)
-        pad_data = pad(data, AES.block_size, style=self.style)
+        pad_data = pad(data.encode(), AES.block_size, style=self.style)
         return str(
             unpad(
                 aes.decrypt(base64.decodebytes(pad_data)),

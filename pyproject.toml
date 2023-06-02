@@ -41,11 +41,11 @@ elasticsearch = { extras = ["async"], version = "7.8.0" }
 redis-om = "0.1.2"
 kubernetes = "26.1.0"
 rich = "13.3.5"
+pyinstrument = "4.4.0"    # profile
 
 [tool.poetry.dev-dependencies]
 # poetry install --no-dev
 pytest-asyncio = "0.21.0"
-mypy = "1.1.1"
 black = "23.1.0"
 isort = "5.12.0"
 ruff = "0.0.270"          # code check
@@ -55,7 +55,6 @@ factory-boy = "3.2.1"     # fake data generate
 hypothesis = "6.74.0"     # roperty-based tests, range fake data generate cases
 mimesis = "10.1.0"        # fake data generate
 py-spy = "0.3.14"         # profile
-pyinstrument = "4.4.0"    # profile
 
 # [[tool.poetry.source]]
 # name = "local"

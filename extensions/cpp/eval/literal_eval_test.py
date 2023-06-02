@@ -1,14 +1,15 @@
+# ruff: noqa
 import os
 import ast
 import gzip
 import pickle
 import argparse
-from typing import Union
+from typing import Any, Union
 
 from extensions.cpp.eval.literal_eval import py_to_pickle, py_to_pickle_tmp
 
 
-def assert_equal(a: any, b: any, _msg: str = "") -> None:
+def assert_equal(a: Any, b: Any, _msg: str = "") -> None:
     assert type(a) == type(b)
     if isinstance(a, dict):
         assert len(a) == len(b)

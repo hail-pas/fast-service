@@ -90,7 +90,8 @@ def paginate(
     list_schema: BaseModel,
     max_limit: Optional[int],
 ) -> Callable[
-    [PositiveInt, PositiveInt, str, set[str], Optional[set[str]]], CURDPager,
+    [PositiveInt, PositiveInt, str, set[str], Optional[set[str]]],
+    CURDPager,
 ]:
     def get_pager(
         page: PositiveInt = Query(default=1, example=1, description="第几页"),

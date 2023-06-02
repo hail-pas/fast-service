@@ -1,4 +1,5 @@
-from typing import Callable, Optional
+# ruff: noqa
+from typing import Any, Callable, Optional
 
 from aioredis import Redis, Connection, ConnectionPool
 from aioredis.client import KeyT, FieldT, ExpiryT, _ArgT
@@ -82,7 +83,7 @@ class AsyncRedisUtil:
         *args,
         exp_of_none: ExpiryT,
         callback: str,
-    ) -> any:
+    ) -> Any:
         """设置缓存过期."""
         if not exp_of_none:
             return await getattr(cls._redis, callback)(*args)
@@ -100,18 +101,18 @@ class AsyncRedisUtil:
         return ret  # noqa
 
     @classmethod
-    async def set(cls, key: KeyT, value: _ArgT, exp: ExpiryT = None) -> any:
+    async def set(cls, key: KeyT, value: _ArgT, exp: ExpiryT = None) -> Any:
         return await cls._redis.set(key, value, ex=exp)
 
     @classmethod
-    async def get(cls, key: KeyT, default: _ArgT = None) -> any:
+    async def get(cls, key: KeyT, default: _ArgT = None) -> Any:
         value = await cls._redis.get(key)
         if value is None:
             return default
         return value
 
     @classmethod
-    async def hget(cls, name: str, key: str, default: _ArgT = None) -> any:
+    async def hget(cls, name: str, key: str, default: _ArgT = None) -> Any:
         """缓存清除, 接收list or str."""
         v = await cls._redis.hget(name, key)
         if v is None:
@@ -124,7 +125,7 @@ class AsyncRedisUtil:
         key: KeyT,
         default: _ArgT | None = None,
         value_func: Callable[[], tuple[_ArgT, ExpiryT]] = None,
-    ) -> any:
+    ) -> Any:
         """获取或者设置缓存."""
         value = await cls._redis.get(key)
         if value is None and default:
@@ -137,7 +138,7 @@ class AsyncRedisUtil:
         return value
 
     @classmethod
-    async def delete(cls, key: KeyT) -> any:
+    async def delete(cls, key: KeyT) -> Any:
         return await cls._redis.delete(key)
 
     @classmethod
@@ -146,7 +147,7 @@ class AsyncRedisUtil:
         name: KeyT,
         values: list[_ArgT],
         exp_of_none: ExpiryT = None,
-    ) -> any:
+    ) -> Any:
         cls._redis.sadd()
         return await cls._exp_of_none(
             name,
@@ -162,7 +163,7 @@ class AsyncRedisUtil:
         key: FieldT,
         value: _ArgT,
         exp_of_none: ExpiryT = None,
-    ) -> any:
+    ) -> Any:
         return await cls._exp_of_none(
             name,
             key,
@@ -178,7 +179,7 @@ class AsyncRedisUtil:
         key: FieldT,
         value: int = 1,
         exp_of_none: ExpiryT = None,
-    ) -> any:
+    ) -> Any:
         return await cls._exp_of_none(
             name,
             key,
@@ -194,7 +195,7 @@ class AsyncRedisUtil:
         key: FieldT,
         value: float,
         exp_of_none: ExpiryT = None,
-    ) -> any:
+    ) -> Any:
         return await cls._exp_of_none(
             name,
             key,
@@ -209,7 +210,7 @@ class AsyncRedisUtil:
         name: KeyT,
         value: int = 1,
         exp_of_none: ExpiryT = None,
-    ) -> any:
+    ) -> Any:
         return await cls._exp_of_none(
             name,
             value,

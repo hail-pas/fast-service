@@ -27,7 +27,7 @@
   },
   "PROFILING": {
     "SECRET": "",
-    "INTERVAL": 1
+    "INTERVAL": 0.001
   },
   "PROJECT": {
     "UNIQUE_CODE": "FastService",

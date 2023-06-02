@@ -29,6 +29,3 @@ make check
 # 测试用例
 make test
 ```
-
-# TODO
-- 测试用例

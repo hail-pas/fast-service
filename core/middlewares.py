@@ -74,6 +74,7 @@ async def profile_request(
 
 roster = [
     # >>>>> Middleware Func
+    profile_request,
     [
         LogWithContextMiddleware,
         {

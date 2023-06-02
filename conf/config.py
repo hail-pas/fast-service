@@ -148,7 +148,7 @@ class Server(HostAndPort):
 
 class ProfilingConfig(BaseModel):
     SECRET: str
-    INTERVAL: int = 1
+    INTERVAL: float = 0.001
 
 
 class Project(BaseModel):
