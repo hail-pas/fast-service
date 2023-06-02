@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from storages.relational.models import System
 from storages.relational.models.account import Role
@@ -8,10 +8,11 @@ from storages.relational.pydantic.resource import (
 )
 
 
-def resource_list_to_tree(nodes: list) -> List[ResourceLevelTreeNode]:
+def resource_list_to_tree(nodes: list) -> list[ResourceLevelTreeNode]:
     node_dict = {
         node.id: ResourceLevelTreeNode(
-            **ResourceLevelTreeBaseNode.from_orm(node).dict(), children=[]
+            **ResourceLevelTreeBaseNode.from_orm(node).dict(),
+            children=[],
         )
         for node in nodes
     }
@@ -27,8 +28,9 @@ def resource_list_to_tree(nodes: list) -> List[ResourceLevelTreeNode]:
 
 
 async def get_resource_tree(
-    system: System, role: Optional[Role]
-) -> List[ResourceLevelTreeNode]:
+    system: System,
+    role: Optional[Role],
+) -> list[ResourceLevelTreeNode]:
     if role is None:
         # 获取系统的所有资源
         available_resource_nodes = await system.resources.all()

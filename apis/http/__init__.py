@@ -1,7 +1,5 @@
-"""
-HTTP API
-"""
-from typing import List, Optional
+"""HTTP API."""
+from typing import Optional
 
 from fastapi import Request, APIRouter
 from pydantic import BaseModel
@@ -27,9 +25,15 @@ class HealthCheck(BaseModel):
 
 
 @http_routes.get(
-    "/", tags=[TagsEnum.root], summary="健康检查", response_model=Resp[HealthCheck]
+    "/",
+    tags=[TagsEnum.root],
+    summary="健康检查",
+    response_model=Resp[HealthCheck],
 )
 async def index() -> Resp[HealthCheck]:
+    from storages.redis import AsyncRedisUtil
+
+    await AsyncRedisUtil._redis.keys("ResearchDtcAnalysis*")
     return Resp[HealthCheck](
         message="OK",
         data={
@@ -45,11 +49,11 @@ class UriItem(BaseModel):
     method: str
     path: str
     name: Optional[str]
-    tags: List[Optional[str]]
+    tags: list[Optional[str]]
 
 
 @http_routes.get("/uri-list", tags=[TagsEnum.root], summary="全部uri")
-def get_all_urls_from_request(request: Request) -> Resp[List[UriItem]]:
+def get_all_urls_from_request(request: Request) -> Resp[list[UriItem]]:
     url_list = []
     for route in request.app.routes:
         route_info = {
@@ -65,13 +69,13 @@ def get_all_urls_from_request(request: Request) -> Resp[List[UriItem]]:
                     {
                         "method": method,
                         **route_info,
-                    }
+                    },
                 )
         else:
             url_list.append(
                 {
                     "method": "ws",
                     **route_info,
-                }
+                },
             )
     return Resp(data=url_list)

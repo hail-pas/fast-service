@@ -1,5 +1,4 @@
 import inspect
-from typing import List
 from datetime import datetime
 
 import pydantic
@@ -11,7 +10,7 @@ def optional(*fields):
     """Decorator function used to modify a pydantic model's fields to all be optional.
     Alternatively, you can  also pass the field names that should be made optional as arguments
     to the decorator.
-    Taken from https://github.com/samuelcolvin/pydantic/issues/1223#issuecomment-775363074
+    Taken from https://github.com/samuelcolvin/pydantic/issues/1223#issuecomment-775363074.
     """
 
     def dec(_cls):
@@ -39,15 +38,17 @@ class DateTimeFormatConfig:
 
 def sub_fields_model(
     base_model: pydantic.BaseModel,
-    fields: List[str],
+    fields: list[str],
 ) -> pydantic.BaseModel:
     class ToModel(base_model):
         pass
 
     ToModel.__fields__ = filter_dict(
-        ToModel.__fields__, lambda k, _: k in fields
+        ToModel.__fields__,
+        lambda k, _: k in fields,
     )
     ToModel.__config__.fields = filter_dict(
-        ToModel.__config__.fields, lambda k, _: k in fields
+        ToModel.__config__.fields,
+        lambda k, _: k in fields,
     )
     return ToModel

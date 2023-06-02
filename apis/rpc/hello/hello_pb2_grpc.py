@@ -5,13 +5,14 @@ import grpc
 from apis.rpc.hello import hello_pb2 as rpcs_dot_hello_dot_hello__pb2
 
 
-class HelloStub(object):
+class HelloStub:
     """Service Definition."""
 
-    def __init__(self, channel):
+    def __init__(self, channel) -> None:
         """Constructor.
 
         Args:
+        ----
             channel: A grpc.Channel.
         """
         self.HelloRPC = channel.unary_unary(
@@ -41,7 +42,7 @@ class HelloStub(object):
         )
 
 
-class HelloServicer(object):
+class HelloServicer:
     """Service Definition."""
 
     def HelloRPC(self, request, context):
@@ -104,13 +105,14 @@ def add_HelloServicer_to_server(servicer, server):
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-        "Hello", rpc_method_handlers
+        "Hello",
+        rpc_method_handlers,
     )
     server.add_generic_rpc_handlers((generic_handler,))
 
 
 # This class is part of an EXPERIMENTAL API.
-class Hello(object):
+class Hello:
     """Service Definition."""
 
     @staticmethod

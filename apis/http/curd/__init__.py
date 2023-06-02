@@ -1,19 +1,7 @@
-from typing import (
-    Any,
-    Set,
-    Dict,
-    List,
-    Type,
-    Tuple,
-    Union,
-    Generic,
-    TypeVar,
-    Callable,
-    Optional,
-    Sequence,
-)
+from typing import Any, Union, Generic, TypeVar, Callable, Optional
 from collections import defaultdict
 from dataclasses import asdict, dataclass
+from collections.abc import Sequence
 
 from fastapi import Body, Depends, Request, APIRouter, HTTPException
 from pydantic import BaseModel, create_model
@@ -39,12 +27,11 @@ T = TypeVar("T", bound=BaseModel)
 
 
 def schema_factory(
-    schema_cls: Type[T], pk_field_name: str = "id", name: str = "Create"
-) -> Type[T]:
-    """
-    Is used to create a CreateSchema which does not contain pk
-    """
-
+    schema_cls: type[T],
+    pk_field_name: str = "id",
+    name: str = "Create",
+) -> type[T]:
+    """Is used to create a CreateSchema which does not contain pk."""
     fields = {
         f.name: (f.type_, ...)
         for f in schema_cls.__fields__.values()
@@ -52,23 +39,20 @@ def schema_factory(
     }
 
     name = schema_cls.__name__ + name
-    schema: Type[T] = create_model(__model_name=name, **fields)  # type: ignore
+    schema: type[T] = create_model(__model_name=name, **fields)  # type: ignore
     return schema
 
 
-PAGINATION = Dict[str, Optional[int]]
+PAGINATION = dict[str, Optional[int]]
 
 
 def pagination_factory(
     db_model: Model,
-    search_fields: Set[str],
+    search_fields: set[str],
     list_schema: BaseModel,
     max_limit: Optional[int] = None,
 ) -> CURDPager:
-    """
-    Created the pagination dependency to be used in the router
-    """
-
+    """Created the pagination dependency to be used in the router."""
     return Depends(paginate(db_model, search_fields, list_schema, max_limit))
 
 
@@ -76,8 +60,9 @@ DEPENDENCIES = Optional[Sequence[Depends]]
 
 
 async def update_create_data_clean(
-    data: dict, model: Model
-) -> Tuple[dict, dict]:
+    data: dict,
+    model: Model,
+) -> tuple[dict, dict]:
     fields_map = model._meta.fields_map
     fk_fields = [f"{i}_id" for i in model._meta.fk_fields]
     m2m_fields = model._meta.m2m_fields
@@ -85,18 +70,18 @@ async def update_create_data_clean(
     cleaned_data = {}
     m2m_fields_data = defaultdict(list)
 
-    for key in data.keys():
+    for key in data:
         if key not in fields_map:
             continue
         if key in fk_fields:
             if data[key]:
                 field = fields_map[key.split("_id")[0]]
                 obj = await field.related_model.get_or_none(
-                    **{field.to_field: data[key]}
+                    **{field.to_field: data[key]},
                 )
                 if not obj:
                     raise ApiException(
-                        ObjectNotExistMsgTemplate % field.description
+                        ObjectNotExistMsgTemplate % field.description,
                     )
             cleaned_data[key] = data[key]
             continue
@@ -111,7 +96,7 @@ async def update_create_data_clean(
                 if not obj:
                     raise ApiException(
                         ObjectNotExistMsgTemplate
-                        % f"id为{related_id}的{model._meta.table_description}"
+                        % f"id为{related_id}的{model._meta.table_description}",
                     )
                 m2m_fields_data[key].append(obj)
             continue
@@ -130,35 +115,36 @@ def default_filter():
 
 
 async def default_get_queryset(
-    self: "CURDGenerator", request: Request
+    self: "CURDGenerator",
+    request: Request,
 ) -> QuerySet:
     return self.queryset or self.db_model.all()
 
 
 class CURDGenerator(Generic[T], APIRouter):
-    db_model: Type[Model]
+    db_model: type[Model]
     queryset: Optional[QuerySet]
-    schema: Type[T]
-    create_schema: Type[T]
-    update_schema: Type[T]
-    filter_schema: Type[T]
-    retrieve_schema: Type[T]
+    schema: type[T]
+    create_schema: type[T]
+    update_schema: type[T]
+    filter_schema: type[T]
+    retrieve_schema: type[T]
     _base_path: str = "/"
     get_queryset: Callable[["CURDGenerator", Request], QuerySet]
 
     def __init__(
         self,
-        schema: Type[T],
-        db_model: Type[Model],
+        schema: type[T],
+        db_model: type[Model],
         queryset: Optional[QuerySet] = None,
         get_queryset: Callable[["CURDGenerator", Request], QuerySet] = None,
-        create_schema: Optional[Type[T]] = None,
-        update_schema: Optional[Type[T]] = None,
-        retrieve_schema: Optional[Type[T]] = None,
-        filter_schema: Optional[Type[T]] = None,
-        search_fields: Optional[List[str]] = None,
+        create_schema: Optional[type[T]] = None,
+        update_schema: Optional[type[T]] = None,
+        retrieve_schema: Optional[type[T]] = None,
+        filter_schema: Optional[type[T]] = None,
+        search_fields: Optional[list[str]] = None,
         prefix: Optional[str] = None,
-        tags: Optional[List[str]] = None,
+        tags: Optional[list[str]] = None,
         max_paginate_limit: Optional[int] = None,
         get_all_route: Union[bool, DEPENDENCIES] = True,
         get_one_route: Union[bool, DEPENDENCIES] = True,
@@ -186,14 +172,18 @@ class CURDGenerator(Generic[T], APIRouter):
             create_schema
             if create_schema
             else schema_factory(
-                self.schema, pk_field_name=self._pk, name="Create"
+                self.schema,
+                pk_field_name=self._pk,
+                name="Create",
             )
         )
         self.update_schema = (
             update_schema
             if update_schema
             else schema_factory(
-                self.schema, pk_field_name=self._pk, name="Update"
+                self.schema,
+                pk_field_name=self._pk,
+                name="Update",
             )
         )
         self.retrieve_schema = (
@@ -207,7 +197,10 @@ class CURDGenerator(Generic[T], APIRouter):
         tags = tags or [prefix.strip("/").capitalize()]
 
         super().__init__(
-            prefix=prefix, tags=tags, route_class=RespSchemaAPIRouter, **kwargs
+            prefix=prefix,
+            tags=tags,
+            route_class=RespSchemaAPIRouter,
+            **kwargs,
         )
 
         if get_all_route:
@@ -275,7 +268,7 @@ class CURDGenerator(Generic[T], APIRouter):
         path: str,
         endpoint: Callable[..., Any],
         dependencies: Union[bool, DEPENDENCIES],
-        error_responses: Optional[List[HTTPException]] = None,
+        error_responses: Optional[list[HTTPException]] = None,
         **kwargs: Any,
     ) -> None:
         dependencies = [] if isinstance(dependencies, bool) else dependencies
@@ -297,38 +290,53 @@ class CURDGenerator(Generic[T], APIRouter):
         )
 
     def api_route(
-        self, path: str, *args: Any, **kwargs: Any
+        self,
+        path: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
-        """Overrides and exiting route if it exists"""
+        """Overrides and exiting route if it exists."""
         methods = kwargs["methods"] if "methods" in kwargs else ["GET"]
         self.remove_api_route(path, methods)
         return super().api_route(path, *args, **kwargs)
 
     def get(
-        self, path: str, *args: Any, **kwargs: Any
+        self,
+        path: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         self.remove_api_route(path, ["Get"])
         return super().get(path, *args, **kwargs)
 
     def post(
-        self, path: str, *args: Any, **kwargs: Any
+        self,
+        path: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         self.remove_api_route(path, ["POST"])
         return super().post(path, *args, **kwargs)
 
     def put(
-        self, path: str, *args: Any, **kwargs: Any
+        self,
+        path: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         self.remove_api_route(path, ["PUT"])
         return super().put(path, *args, **kwargs)
 
     def delete(
-        self, path: str, *args: Any, **kwargs: Any
+        self,
+        path: str,
+        *args: Any,
+        **kwargs: Any,
     ) -> Callable[[DecoratedCallable], DecoratedCallable]:
         self.remove_api_route(path, ["DELETE"])
         return super().delete(path, *args, **kwargs)
 
-    def remove_api_route(self, path: str, methods: List[str]) -> None:
+    def remove_api_route(self, path: str, methods: list[str]) -> None:
         methods_ = set(methods)
 
         for route in self.routes:
@@ -361,7 +369,8 @@ class CURDGenerator(Generic[T], APIRouter):
             filter_dict.update(extra_kwargs)
 
             queryset: QuerySet[self.db_model] = await self.get_queryset(
-                self, request
+                self,
+                request,
             )
 
             queryset = (
@@ -375,7 +384,7 @@ class CURDGenerator(Generic[T], APIRouter):
                 sub_q_exps = []
                 for search_field in self.search_fields:
                     sub_q_exps.append(
-                        Q(**{f"{search_field}__icontains": search})
+                        Q(**{f"{search_field}__icontains": search}),
                     )
                 q_expression = Q(*sub_q_exps, join_type=Q.OR)
                 queryset = queryset.filter(q_expression)
@@ -383,15 +392,17 @@ class CURDGenerator(Generic[T], APIRouter):
             list_schema = self.schema
             if pagination.selected_fields:
                 list_schema = sub_fields_model(
-                    self.schema, pagination.selected_fields
+                    self.schema,
+                    pagination.selected_fields,
                 )
 
             data = await list_schema.from_queryset(
-                queryset.offset(pagination.offset).limit(pagination.limit)
+                queryset.offset(pagination.offset).limit(pagination.limit),
             )
             total = await queryset.count()
             return PageResp[list_schema](
-                data=data, page_info=generate_page_info(total, pagination)
+                data=data,
+                page_info=generate_page_info(total, pagination),
             )
 
         return route
@@ -402,42 +413,40 @@ class CURDGenerator(Generic[T], APIRouter):
             id: str,
         ):
             model = await (await self.get_queryset(self, request)).get_or_none(
-                id=id
+                id=id,
             )
 
             if model:
                 return Resp[self.retrieve_schema](
-                    data=await self.retrieve_schema.from_tortoise_orm(model)
+                    data=await self.retrieve_schema.from_tortoise_orm(model),
                 )
-            else:
-                return Resp.fail(ObjectNotExistMsgTemplate % "对象")
+            return Resp.fail(ObjectNotExistMsgTemplate % "对象")
 
         return route
 
     def _create(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
         @atomic("default")
-        async def route(
-            request: Request, model: self.create_schema
-        ):  # type: ignore
+        async def route(request: Request, model: self.create_schema):  # type: ignore
             data, m2m_data = await update_create_data_clean(
-                model.dict(), self.db_model
+                model.dict(),
+                self.db_model,
             )
 
             obj = self.db_model(**data)
             try:
                 await obj.save()
-            except IntegrityError:
+            except IntegrityError as e:
                 raise ApiException(
                     ObjectAlreadyExistMsgTemplate
-                    % f"{self.db_model._meta.table_description}"
-                )
+                    % f"{self.db_model._meta.table_description}",
+                ) from e
 
             for k, v in m2m_data.items():
                 if v:
                     await getattr(obj, k).add(*v)
 
             return Resp[self.retrieve_schema](
-                data=await self.retrieve_schema.from_tortoise_orm(obj)
+                data=await self.retrieve_schema.from_tortoise_orm(obj),
             )
 
         return route
@@ -445,26 +454,29 @@ class CURDGenerator(Generic[T], APIRouter):
     def _update(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
         @atomic("default")
         async def route(
-            request: Request, id: str, model: self.update_schema
+            request: Request,
+            id: str,
+            model: self.update_schema,
         ):  # type: ignore
             obj = await (await self.get_queryset(self, request)).get_or_none(
-                id=id
+                id=id,
             )
             if not obj:
                 return Resp.fail(ObjectNotExistMsgTemplate % "对象")
             data, m2m_data = await update_create_data_clean(
-                model.dict(exclude_unset=True), self.db_model
+                model.dict(exclude_unset=True),
+                self.db_model,
             )
             if data:
                 try:
                     await (await self.get_queryset(self, request)).filter(
-                        id=id
+                        id=id,
                     ).update(**data)
-                except IntegrityError:
+                except IntegrityError as e:
                     raise ApiException(
                         ObjectAlreadyExistMsgTemplate
-                        % f"{self.db_model._meta.table_description}"
-                    )
+                        % f"{self.db_model._meta.table_description}",
+                    ) from e
             if m2m_data:
                 for k, v in m2m_data.items():
                     await getattr(obj, k).add(*v)
@@ -476,7 +488,7 @@ class CURDGenerator(Generic[T], APIRouter):
     def _delete_one(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
         async def route(request: Request, id: str):
             await (await self.get_queryset(self, request)).filter(
-                id=id
+                id=id,
             ).delete()
             return Resp()
 
@@ -484,17 +496,18 @@ class CURDGenerator(Generic[T], APIRouter):
 
     def _batch_delete(self, *args: Any, **kwargs: Any) -> Callable[..., Any]:
         async def route(
-            request: Request, ids: List[str] = Body(..., description="id列表")
+            request: Request,
+            ids: list[str] = Body(..., description="id列表"),
         ):
             await (await self.get_queryset(self, request)).filter(
-                id__in=ids
+                id__in=ids,
             ).delete()
             return Resp()
 
         return route
 
     @staticmethod
-    def get_routes() -> List[str]:
+    def get_routes() -> list[str]:
         return [
             "get_all",
             "create",

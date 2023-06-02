@@ -63,7 +63,8 @@ def copy_project(
                 continue
             current_src_path = src_path.joinpath(need)
             src_path_finds = re.findall(
-                ".*?fastpost/(?P<appendix>.*)", str(current_src_path)
+                ".*?fastpost/(?P<appendix>.*)",
+                str(current_src_path),
             )
             src_appendix = src_path_finds[0] if src_path_finds else ""
             dest_path = dest.joinpath(src_appendix)
@@ -71,17 +72,16 @@ def copy_project(
             if current_src_path.is_file():
                 if is_sub or need in FILES:
                     dest_file = dest_path.open(mode="w", encoding="utf-8")
-                    with open(current_src_path, mode="r") as src_file:
+                    with open(current_src_path) as src_file:
                         for line in src_file:
                             dest_file.write(line.replace("fastpost", name))
 
                     dest_file.close()
                     print("copied to ", dest_path, end="\n")
 
-            elif current_src_path.is_dir():
-                if is_sub or need in DIRS:
-                    dest_path.mkdir(exist_ok=True)
-                    copy_file_in_dir(current_src_path, True)
+            elif current_src_path.is_dir() and (is_sub or need in DIRS):
+                dest_path.mkdir(exist_ok=True)
+                copy_file_in_dir(current_src_path, True)
 
     copy_file_in_dir(src)
 

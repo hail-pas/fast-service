@@ -26,7 +26,9 @@ def py_to_pickle_tmp(s: Union[str, bytes]) -> bytes:
         f_py.flush()
 
         with tempfile.NamedTemporaryFile(
-            "w", suffix=".pkl", prefix=os.path.basename(f_py.name)
+            "w",
+            suffix=".pkl",
+            prefix=os.path.basename(f_py.name),
         ) as f_pkl:
             try:
                 check_call(
@@ -34,19 +36,17 @@ def py_to_pickle_tmp(s: Union[str, bytes]) -> bytes:
                         f"{BASE_DIR.absolute()}/{_BinFilename}",
                         f_py.name,
                         f_pkl.name,
-                    ]
+                    ],
                 )
             except CalledProcessError as exc:
                 print(f"{_BinFilename} returned error code {exc.returncode}")
                 sys.exit(1)
-            return open(f_pkl.name, "rb").read()
+            with open(f_pkl.name, "rb") as f:
+                return f.read()
 
 
 def py_to_pickle(s: Union[str, bytes]) -> bytes:
-    if isinstance(s, bytes):
-        in_bytes = s
-    else:
-        in_bytes = s.encode("utf8")
+    in_bytes = s if isinstance(s, bytes) else s.encode("utf8")
     in_ = ctypes.create_string_buffer(in_bytes)
     in_len = len(in_bytes)
     out_len = (

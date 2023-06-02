@@ -16,11 +16,9 @@ from Cryptodome.Util.Padding import pad, unpad
 
 
 class AESUtil:
-    """
-    aes 加密与解密
-    """
+    """aes 加密与解密."""
 
-    def __init__(self, key: str, style="pkcs7", mode=AES.MODE_ECB):
+    def __init__(self, key: str, style="pkcs7", mode=AES.MODE_ECB) -> None:
         self.mode = mode
         self.style = style
         self.key = base64.b64decode(key.encode())
@@ -30,7 +28,8 @@ class AESUtil:
         aes = AES.new(self.key, self.mode)
         pad_data = pad(data, AES.block_size, style=self.style)
         return str(
-            base64.encodebytes(aes.encrypt(pad_data)), encoding="utf8"
+            base64.encodebytes(aes.encrypt(pad_data)),
+            encoding="utf8",
         ).replace("\n", "")
 
     def decrypt_data(self, data: str) -> str:
@@ -41,7 +40,7 @@ class AESUtil:
             unpad(
                 aes.decrypt(base64.decodebytes(pad_data)),
                 block_size=AES.block_size,
-            ).decode("utf8")
+            ).decode("utf8"),
         )
 
     @staticmethod
@@ -52,11 +51,14 @@ class AESUtil:
 
 
 class RSAUtil:
-    """
-    RSA 加密 签名
-    """
+    """RSA 加密 签名."""
 
-    def __init__(self, pub_key_path: str, private_key_path: str, password):
+    def __init__(
+        self,
+        pub_key_path: str,
+        private_key_path: str,
+        password,
+    ) -> None:
         self.password = password
         with open(private_key_path, "rb") as f:
             self.private_key = f.read()
@@ -64,9 +66,7 @@ class RSAUtil:
             self.pub_key = f.read()
 
     def encrypt(self, text: str, length=200) -> str:
-        """
-        rsa 加密
-        """
+        """Rsa 加密."""
         key = RSA.import_key(self.pub_key)
         cipher = PKCS1_v1_5.new(key)
         res = []
@@ -77,68 +77,61 @@ class RSAUtil:
         return base64.b64encode(b"".join(res)).decode()
 
     def decrypt(self, text: str):
-        """
-        rsa 解密
-        """
+        """Rsa 解密."""
         key = RSA.import_key(self._get_private_key())
         cipher = PKCS1_v1_5.new(key)
         return cipher.decrypt(
-            base64.b64decode(text), Random.new().read(15 + SHA.digest_size)
+            base64.b64decode(text),
+            Random.new().read(15 + SHA.digest_size),
         ).decode()
 
     def _get_private_key(
         self,
     ):
-        """
-        从pfx文件读取私钥
-        """
+        """从pfx文件读取私钥."""
         pfx = crypto.load_pkcs12(self.private_key, self.password.encode())
-        res = crypto.dump_privatekey(crypto.FILETYPE_PEM, pfx.get_privatekey())
-        return res
+        return crypto.dump_privatekey(
+            crypto.FILETYPE_PEM,
+            pfx.get_privatekey(),
+        )
 
     def sign(self, text) -> str:
-        """
-        rsa 签名
-        """
+        """Rsa 签名."""
         p12 = OpenSSL.crypto.load_pkcs12(
-            self.private_key, self.password.encode()
+            self.private_key,
+            self.password.encode(),
         )
         pri_key = p12.get_privatekey()
         return base64.b64encode(
-            OpenSSL.crypto.sign(pri_key, text.encode(), "sha256")
+            OpenSSL.crypto.sign(pri_key, text.encode(), "sha256"),
         ).decode()
 
     def verify(self, sign, data: str):
-        """
-        验签
-        """
+        """验签."""
         key = OpenSSL.crypto.load_certificate(FILETYPE_PEM, self.pub_key)
         return OpenSSL.crypto.verify(
-            key, base64.b64decode(sign), data.encode(), "sha256"
+            key,
+            base64.b64decode(sign),
+            data.encode(),
+            "sha256",
         )
 
 
 class HashUtil:
     @staticmethod
     def md5_encode(s: str) -> str:
-        """
-        md5加密, 16进制
-        """
+        """md5加密, 16进制."""
         m = hashlib.md5(s.encode(encoding="utf-8"))
         return m.hexdigest()
 
     @staticmethod
     def hmac_sha256_encode(k: str, s: str) -> str:
-        """
-        hmac sha256加密, 16进制
-        """
+        """Hmac sha256加密, 16进制."""
         return hmac.digest(k.encode(), s.encode(), hashlib.sha256().name).hex()
 
     @staticmethod
     def sha1_encode(s: str) -> str:
-        """
-        sha1加密, 16进制
-        """
+        """sha1加密, 16进制."""
         m = hashlib.sha1(s.encode(encoding="utf-8"))
         return m.hexdigest()
 
@@ -146,40 +139,34 @@ class HashUtil:
 class HashUtilB64:
     @staticmethod
     def md5_encode_b64(s: str) -> str:
-        """
-        md5加密，base64编码
-        """
+        """md5加密，base64编码."""
         return base64.b64encode(
-            hashlib.md5(s.encode(encoding="utf-8")).digest()
+            hashlib.md5(s.encode(encoding="utf-8")).digest(),
         ).decode("utf-8")
 
     @staticmethod
     def hmac_sha256_encode_b64(k: str, s: str) -> str:
-        """
-        hmacsha256加密，base64编码
-        """
+        """hmacsha256加密，base64编码."""
         return base64.b64encode(
             hmac.digest(
-                k.encode("utf-8"), s.encode("utf-8"), hashlib.sha256().name
-            )
+                k.encode("utf-8"),
+                s.encode("utf-8"),
+                hashlib.sha256().name,
+            ),
         ).decode("utf-8")
 
     @staticmethod
     def sha1_encode_b64(s: str) -> str:
-        """
-        sha1加密，base64编码
-        """
+        """sha1加密，base64编码."""
         return base64.b64encode(
-            hashlib.sha1(s.encode(encoding="utf-8")).digest()
+            hashlib.sha1(s.encode(encoding="utf-8")).digest(),
         ).decode("utf-8")
 
 
 class SignAuth:
-    """
-    内部签名工具
-    """
+    """内部签名工具."""
 
-    def __init__(self, private_key: str):
+    def __init__(self, private_key: str) -> None:
         self.private_key = private_key
 
     def verify(
@@ -187,23 +174,17 @@ class SignAuth:
         sign: str,
         data_str: str,
     ):
-        """
-        校验sign
-        """
+        """校验sign."""
         sign_tmp = self.generate_sign(data_str)
         return sign == sign_tmp
 
     def generate_sign(self, data_str: str) -> str:
-        """
-        生成sign
-        """
+        """生成sign."""
         return HashUtilB64.hmac_sha256_encode_b64(self.private_key, data_str)
 
 
 class PasswordUtil:
-    """
-    密码工具
-    """
+    """密码工具."""
 
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -217,13 +198,11 @@ class PasswordUtil:
 
 
 class Jwt:
-    """
-    jwt 工具
-    """
+    """jwt 工具."""
 
     algorithm = "HS256"
 
-    def __init__(self, secret: str):
+    def __init__(self, secret: str) -> None:
         self.secret = secret
 
     def get_jwt(self, payload: dict) -> str:

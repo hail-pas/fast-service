@@ -1,6 +1,4 @@
-"""
-全部的Enum类型
-"""
+"""全部的Enum类型."""
 import sys
 import inspect
 from typing import Optional
@@ -9,9 +7,7 @@ from common.types import IntEnumMore, StrEnumMore
 
 
 class SystemResourceTypeEnum(StrEnumMore):
-    """
-    系统资源
-    """
+    """系统资源."""
 
     menu = ("menu", "菜单")
     button = ("button", "按钮")
@@ -19,22 +15,20 @@ class SystemResourceTypeEnum(StrEnumMore):
 
 
 class PermissionTypeEnum(StrEnumMore):
-    """
-    权限类型
-    """
+    """权限类型."""
 
     api = ("api", "API")
 
 
 class StatusEnum(StrEnumMore):
-    """启用状态"""
+    """启用状态."""
 
     enable = ("enable", "启用")
     disable = ("disable", "禁用")
 
 
 class ProtocolEnum(StrEnumMore):
-    """协议"""
+    """协议."""
 
     https = ("https", "https")
     http = ("http", "http")
@@ -62,27 +56,26 @@ class TaskTypeEnum(StrEnumMore):
 # [("name", Enum)]
 __enum_set__ = list(
     filter(
-        lambda cls_name_and_cls: True
-        if issubclass(cls_name_and_cls[1], (StrEnumMore, IntEnumMore))
-        and cls_name_and_cls[1] not in [StrEnumMore, IntEnumMore]
-        else False,
+        lambda cls_name_and_cls: bool(
+            issubclass(cls_name_and_cls[1], (StrEnumMore, IntEnumMore))
+            and cls_name_and_cls[1] not in [StrEnumMore, IntEnumMore],
+        ),
         inspect.getmembers(sys.modules[__name__], inspect.isclass),
-    )
+    ),
 )
 
-__enum_choices__ = list(
-    map(
-        lambda cls_name_and_cls: (
-            cls_name_and_cls[0],
-            cls_name_and_cls[1].__doc__.strip(),
-        ),
-        __enum_set__,
+__enum_choices__ = [
+    (
+        cls_name_and_cls[0],
+        cls_name_and_cls[1].__doc__.strip(),
     )
-)
+    for cls_name_and_cls in __enum_set__
+]
 
 
 def get_enum_content(
-    enum_name: Optional[str] = None, is_reversed: bool = False
+    enum_name: Optional[str] = None,
+    is_reversed: bool = False,
 ):
     enum_content = {}
     enum_list = []

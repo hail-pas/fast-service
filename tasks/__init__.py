@@ -1,25 +1,35 @@
-import ujson
-import inspect
 import os
 import re
-from loguru import logger
-import yaml
-from typing import Optional, Tuple, Union
 import uuid
+import inspect
+from typing import Union, Optional
+
+import yaml
+import ujson
+from loguru import logger
 
 from conf.config import local_configs
-from third_apis.k8s import client, batch_v1_api, JobConfig, CronJobConfig, NAMESPACE, JOB_TEMPLATE, CRONJOB_TEMPLATE
 from storages.enums import TaskTypeEnum
+from third_apis.k8s import (
+    NAMESPACE,
+    JOB_TEMPLATE,
+    CRONJOB_TEMPLATE,
+    JobConfig,
+    CronJobConfig,
+    client,
+    batch_v1_api,
+)
 
 
 class UsageError(Exception):
     ...
 
 
-async def _load_or_create_task(task_proxy: "TaskProxy") -> Tuple[bool, str]:
+async def _load_or_create_task(task_proxy: "TaskProxy") -> tuple[bool, str]:
     # from common.command.shell import init_ctx_relational
     # await init_ctx_relational()
     from storages.relational.models import Task
+
     _t, _ = await Task.update_or_create(
         file_path=task_proxy.file_path,
         func_name=task_proxy.func_name,
@@ -28,7 +38,7 @@ async def _load_or_create_task(task_proxy: "TaskProxy") -> Tuple[bool, str]:
             "cron": task_proxy.cron,
             "description": task_proxy.description,
             "enabled": task_proxy.enabled,
-        }
+        },
     )
     return True, str(_t.id)
 
@@ -43,9 +53,19 @@ class TaskProxy:
     enabled: bool
     param_id: Optional[str]
 
-    def __init__(self, func: callable, description: str, type_: TaskTypeEnum, cron: Optional[str], enabled: bool = True):
+    def __init__(
+        self,
+        func: callable,
+        description: str,
+        type_: TaskTypeEnum,
+        cron: Optional[str],
+        enabled: bool = True,
+    ) -> None:
         file_path = os.path.abspath(inspect.getfile(func))
-        self.file_path = os.path.relpath(file_path, local_configs.PROJECT.BASE_DIR)
+        self.file_path = os.path.relpath(
+            file_path,
+            local_configs.PROJECT.BASE_DIR,
+        )
         self.func_name = func.__name__
         self.func = func
         self.description = description
@@ -54,17 +74,17 @@ class TaskProxy:
         self.enabled = enabled
 
     async def __call__(self, *args, **kwargs):
-
         return await self.func(*args, **kwargs)
 
     async def delay(self, *args, **kwargs):
         from storages.redis import AsyncRedisUtil, keys
+
         # save params
-        param_id=uuid.uuid4()
+        param_id = uuid.uuid4()
         _, task_id = await _load_or_create_task(self)
         key = keys.RedisCacheKey.TaskPramsKey.format(
             task_id=task_id,
-            param_id=param_id
+            param_id=param_id,
         )
         await AsyncRedisUtil.hset(
             key,
@@ -82,23 +102,20 @@ class TaskProxy:
         config = self.generate_job_config(task_id=task_id, param_id=param_id)
         body = self.generate_yaml_body(config)
         try:
-            batch_v1_api.create_namespaced_job(
-                namespace=NAMESPACE,
-                body=body
-            )
+            batch_v1_api.create_namespaced_job(namespace=NAMESPACE, body=body)
         except Exception as e:
             logger.error(f"Create job failed: {repr(e)}")
         return config.name
 
-    async def schedule(self) -> Tuple[bool, str]:
-        if not self.type_ is TaskTypeEnum.scheduled:
+    async def schedule(self) -> tuple[bool, str]:
+        if self.type_ is not TaskTypeEnum.scheduled:
             return False, "Task is not a scheduled task!"
         config = self.generate_cronjob_config()
         body = self.generate_yaml_body(config)
         try:
             batch_v1_api.create_namespaced_cron_job(
                 namespace=NAMESPACE,
-                body=body
+                body=body,
             )
         except Exception as e:
             logger.error(f"Create cronjob failed: {repr(e)}")
@@ -106,20 +123,29 @@ class TaskProxy:
         return config.name
 
     def generate_yaml_body(self, config: Union[JobConfig, CronJobConfig]):
-        yaml_path = JOB_TEMPLATE if self.type_ is TaskTypeEnum.asynchronous else CRONJOB_TEMPLATE
-        with open(yaml_path, "r") as f:
+        yaml_path = (
+            JOB_TEMPLATE
+            if self.type_ is TaskTypeEnum.asynchronous
+            else CRONJOB_TEMPLATE
+        )
+        with open(yaml_path) as f:
             content = f.read()
-        placeholders = re.findall(r'\{\{.*?\}\}', content)
+        placeholders = re.findall(r"\{\{.*?\}\}", content)
         for placeholder in placeholders:
             var_name = placeholder[2:-2].strip()
             if var_name in config.dict():
                 if not config.dict()[var_name]:
-                    raise UsageError(f"Kubsernets Yaml Config-{var_name} is required!")
+                    raise UsageError(
+                        f"Kubsernets Yaml Config-{var_name} is required!",
+                    )
                 content = content.replace(placeholder, config.dict()[var_name])
-        body = yaml.safe_load(content)
-        return body
+        return yaml.safe_load(content)
 
-    def generate_job_config(self, task_id: str, param_id: Optional[str] = None) -> JobConfig:
+    def generate_job_config(
+        self,
+        task_id: str,
+        param_id: Optional[str] = None,
+    ) -> JobConfig:
         prefix = self.file_path.replace(os.sep, ".")[:-3]
         name = f"{prefix}.{self.func_name.replace('_', '-')}"
         command = f'python tasks/asynchronous/entry.py --task_id "{task_id}" --param_id "{param_id}"'
@@ -133,7 +159,6 @@ class TaskProxy:
 
 
 class TaskManager:
-
     def task(  # noqa
         self,
         description: Optional[str] = "",
@@ -143,21 +168,23 @@ class TaskManager:
     ):
         def _1(func):
             if not inspect.iscoroutinefunction(func):
-                raise UsageError(f"Task-{func.__name__} is not Awaitable Callable!")
+                raise UsageError(
+                    f"Task-{func.__name__} is not Awaitable Callable!",
+                )
 
             if type_ is TaskTypeEnum.scheduled and not cron:
-                raise UsageError(f"Cron Task-{func.__name__} must specify cron rule!")
+                raise UsageError(
+                    f"Cron Task-{func.__name__} must specify cron rule!",
+                )
 
             nonlocal description
             if not description:
                 description = func.__doc__.strip() if func.__doc__ else ""
 
-            _2 = TaskProxy(func, description, type_, cron, enabled)
-
             # def _2(*args, **kwargs):
             #     return func(*args, **kwargs)
 
-            return _2
+            return TaskProxy(func, description, type_, cron, enabled)
 
         return _1
 
@@ -167,9 +194,9 @@ class TaskManager:
             name=job_name,
             namespace=NAMESPACE,
             body=client.V1DeleteOptions(
-                propagation_policy='Foreground',
-                grace_period_seconds=5
-            )
+                propagation_policy="Foreground",
+                grace_period_seconds=5,
+            ),
         )
 
     @classmethod
@@ -178,9 +205,10 @@ class TaskManager:
             name=job_name,
             namespace=NAMESPACE,
             body=client.V1DeleteOptions(
-                propagation_policy='Foreground',
-                grace_period_seconds=5
-            )
+                propagation_policy="Foreground",
+                grace_period_seconds=5,
+            ),
         )
+
 
 task_manager = TaskManager()

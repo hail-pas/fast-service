@@ -1,5 +1,4 @@
 import uuid
-from typing import List
 
 from fastapi import Query, Depends, Request, APIRouter
 
@@ -69,7 +68,7 @@ router.include_router(
         retrieve_schema=AccountDetail,
         search_fields=["username", "nickname"],
         tags=[TagsEnum.account],
-    )
+    ),
 )
 
 router.include_router(
@@ -82,7 +81,7 @@ router.include_router(
         retrieve_schema=RoleDetail,
         search_fields=["label"],
         tags=[TagsEnum.role],
-    )
+    ),
 )
 
 router.include_router(
@@ -95,7 +94,7 @@ router.include_router(
         retrieve_schema=SystemDetail,
         search_fields=["label"],
         tags=[TagsEnum.system],
-    )
+    ),
 )
 
 router.include_router(
@@ -108,7 +107,7 @@ router.include_router(
         retrieve_schema=PermissionDetail,
         search_fields=["label"],
         tags=[TagsEnum.permission],
-    )
+    ),
 )
 
 router.include_router(
@@ -125,7 +124,7 @@ router.include_router(
             "label",
         ],
         tags=[TagsEnum.resource],
-    )
+    ),
 )
 
 
@@ -133,19 +132,17 @@ router.include_router(
 async def resource_tree(
     request: Request,
     system_id: uuid.UUID = Query(..., description="系统id"),
-) -> Resp[List[ResourceLevelTreeNode]]:
-    """
-    获取资源树
-    """
+) -> Resp[list[ResourceLevelTreeNode]]:
+    """获取资源树."""
     system = await System.get(id=system_id)
     if not system:
         return Resp.fail(message=ObjectNotExistMsgTemplate % "系统")
     role = request.scope["role"]
     # if not role:
     # return Resp.fail(message=ObjectNotExistMsgTemplate % "角色")
-    return Resp[List[ResourceLevelTreeNode]](
+    return Resp[list[ResourceLevelTreeNode]](
         data=await get_resource_tree(
             system=system,
             role=role,
-        )
+        ),
     )

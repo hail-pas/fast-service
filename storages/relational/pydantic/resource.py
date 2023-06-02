@@ -1,5 +1,4 @@
 import uuid
-from typing import List
 
 from pydantic import Field
 from tortoise.contrib.pydantic import pydantic_model_creator
@@ -31,9 +30,9 @@ class ResourceCreate(
         name="SystemResourceCreate",
         exclude=["deleted_at"],
         exclude_readonly=True,
-    )
+    ),
 ):
-    permissions: List[uuid.UUID] = Field([], description="权限id列表")
+    permissions: list[uuid.UUID] = Field([], description="权限id列表")
 
 
 @optional
@@ -57,4 +56,4 @@ ResourceLevelTreeBaseNode = pydantic_model_creator(
 
 
 class ResourceLevelTreeNode(ResourceLevelTreeBaseNode):
-    children: List["ResourceLevelTreeNode"] = Field([], description="子节点")
+    children: list["ResourceLevelTreeNode"] = Field([], description="子节点")

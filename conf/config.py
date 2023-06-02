@@ -1,7 +1,7 @@
 import os
 import enum
 import multiprocessing
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 from pathlib import Path
 from functools import lru_cache
 
@@ -18,7 +18,8 @@ class EnvironmentEnum(str, enum.Enum):
 
 
 ENVIRONMENT = os.environ.get(
-    "environment", EnvironmentEnum.development.value.capitalize()
+    "environment",  # noqa
+    EnvironmentEnum.development.value.capitalize(),
 )
 
 CONFIG_FILE_PREFIX = (
@@ -144,6 +145,11 @@ class Server(HostAndPort):
     REDOC_URL: str = "/redoc"
 
 
+class ProfilingConfig(BaseModel):
+    SECRET: str
+    INTERVAL: int = 1
+
+
 class Project(BaseModel):
     UNIQUE_CODE: str  # 项目唯一标识，用于redis前缀
     NAME: str = "FastService"
@@ -165,9 +171,11 @@ class Project(BaseModel):
 
     @validator("DEBUG", allow_reuse=True)
     def check_debug_value(
-        cls, v: Optional[str], values: Dict[str, Any]
+        cls,
+        v: Optional[str],
+        values: dict[str, Any],
     ):  # noqa
-        if "ENVIRONMENT" in values.keys():
+        if "ENVIRONMENT" in values:
             assert not (
                 v and values["ENVIRONMENT"] == EnvironmentEnum.production.value
             ), "Production cannot set with debug enabled"
@@ -208,13 +216,13 @@ class ThirdApiConfigs(BaseModel):
 
 
 class LocalConfig(BaseSettings):
-    """
-    全部的配置信息
-    """
+    """全部的配置信息."""
 
     PROJECT: Project
 
     SERVER: Server
+
+    PROFILING: ProfilingConfig
 
     RELATIONAL: Relational
 
@@ -249,12 +257,12 @@ class LocalConfig(BaseSettings):
         ):
             def json_config_settings_source(
                 settings: BaseSettings,
-            ) -> Dict[str, Any]:
+            ) -> dict[str, Any]:
                 encoding = settings.__config__.env_file_encoding
                 return ujson.loads(
                     Path(
-                        ".".join([CONFIG_FILE_PREFIX, CONFIG_FILE_EXTENSION])
-                    ).read_text(encoding)
+                        f"{CONFIG_FILE_PREFIX}.{CONFIG_FILE_EXTENSION}",
+                    ).read_text(encoding),
                 )
 
             return (
@@ -264,7 +272,7 @@ class LocalConfig(BaseSettings):
             )
 
 
-@lru_cache()
+@lru_cache
 def get_local_configs() -> LocalConfig:
     return LocalConfig()
 

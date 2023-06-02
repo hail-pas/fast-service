@@ -1,26 +1,27 @@
-import argparse
-import asyncio
-import importlib
 import os
+import asyncio
+import argparse
+import importlib
+
 import ujson
 
-from common.command.shell import init_ctx
-from common.fastapi import setup_sentry
 from conf.config import local_configs
+from common.fastapi import setup_sentry
 from storages.redis import AsyncRedisUtil
 from storages.redis.keys import RedisCacheKey
+from common.command.shell import init_ctx
 from storages.relational.models import Task
 
 
 async def run_task(task_id: str, param_id: str):
     # init context
     await init_ctx()
-    setup_sentry(local_configs) # sentry
+    setup_sentry(local_configs)  # sentry
 
     # retrieve params and clear params
     key = RedisCacheKey.TaskPramsKey.format(task_id=task_id, param_id=param_id)
-    args = ujson.loads(await AsyncRedisUtil.hget(key, "args", '[]'))
-    kwargs = ujson.loads(await AsyncRedisUtil.hget(key, "kwargs", '{}'))
+    args = ujson.loads(await AsyncRedisUtil.hget(key, "args", "[]"))
+    kwargs = ujson.loads(await AsyncRedisUtil.hget(key, "kwargs", "{}"))
     await AsyncRedisUtil._redis.delete(key)
 
     # retrieve task
@@ -34,7 +35,9 @@ async def run_task(task_id: str, param_id: str):
     module = importlib.import_module(module_name)
     func = getattr(module, func_name, None)
     if not func:
-        raise ValueError(f"Task-{task_id}: Module-{module_name} Func-{func_name} Does not exist")
+        raise ValueError(
+            f"Task-{task_id}: Module-{module_name} Func-{func_name} Does not exist",
+        )
 
     # run task
     return await func(*args, **kwargs)

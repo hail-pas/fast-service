@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import Query
 from pydantic import dataclasses
@@ -9,9 +9,10 @@ from storages import enums
 @dataclasses.dataclass
 class AccountFilterSchema:
     phone: Optional[str] = Query(None, description="手机号")
-    roles__id__in: Optional[List[str]] = Query(None, description="角色id")
+    roles__id__in: Optional[list[str]] = Query(None, description="角色id")
     status: Optional[enums.StatusEnum] = Query(
-        None, description=f"状态, {enums.StatusEnum.dict}"
+        None,
+        description=f"状态, {enums.StatusEnum.dict}",
     )
 
     def __post_init__(self, *args, **kwargs):

@@ -15,27 +15,27 @@ class WebSocketTicks(WebSocketEndpoint):
         await websocket.accept()
         self.ticker_task = asyncio.create_task(self.tick(websocket))
         logger.info(
-            '%s - "WebSocket %s" [accepted]'
-            % (
+            '{} - "WebSocket {}" [accepted]'.format(
                 websocket.scope["client"],
                 websocket.scope["root_path"] + websocket.scope["path"],
-            )
+            ),
         )
         await AsyncRedisUtil.incrby("total_ws_conn")
         logger.info(
-            f"Current Total Conn: {int(await AsyncRedisUtil.get('total_ws_conn'))}"
+            f"Current Total Conn: {int(await AsyncRedisUtil.get('total_ws_conn'))}",
         )
 
     async def on_disconnect(
-        self, websocket: WebSocket, close_code: int
+        self,
+        websocket: WebSocket,
+        close_code: int,
     ) -> None:
         self.ticker_task.cancel()
         logger.info(
-            '%s - "WebSocket %s" [disconnected]'
-            % (
+            '{} - "WebSocket {}" [disconnected]'.format(
                 websocket.scope["client"],
                 websocket.scope["root_path"] + websocket.scope["path"],
-            )
+            ),
         )
         await AsyncRedisUtil.incrby("total_ws_conn", -1)
 

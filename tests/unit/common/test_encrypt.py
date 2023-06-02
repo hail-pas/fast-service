@@ -89,7 +89,8 @@ class TestAESUtil(unittest.TestCase):
 class TestHashUtil(unittest.TestCase):
     def test_md5_encode(self):
         self.assertEqual(
-            HashUtil.md5_encode("test"), "098f6bcd4621d373cade4e832627b4f6"
+            HashUtil.md5_encode("test"),
+            "098f6bcd4621d373cade4e832627b4f6",
         )
         self.assertEqual(
             HashUtil.md5_encode("hello world"),
@@ -143,13 +144,15 @@ class TestHashUtilB64(unittest.TestCase):
         # 测试字符串 "hello"，密钥为 "world"
         result = HashUtilB64.hmac_sha256_encode_b64("world", "hello")
         self.assertEqual(
-            result, "PPp27xSTfBwOpRn4/AV6gPzQSnQg+Oi80KdWfCcuAHs="
+            result,
+            "PPp27xSTfBwOpRn4/AV6gPzQSnQg+Oi80KdWfCcuAHs=",
         )
 
         # 测试空字符串和密钥
         result = HashUtilB64.hmac_sha256_encode_b64("", "")
         self.assertEqual(
-            result, "thNnmggU2ex3L5XXeMNfxf8Wl8STcVZTxscSFEKSxa0="
+            result,
+            "thNnmggU2ex3L5XXeMNfxf8Wl8STcVZTxscSFEKSxa0=",
         )
 
     def test_sha1_encode_b64(self):
@@ -210,7 +213,8 @@ class TestSignAuth(unittest.TestCase):
         private_key = "test_private_key"
         data_str = "test_data_str"
         expected_sign = HashUtilB64.hmac_sha256_encode_b64(
-            private_key, data_str
+            private_key,
+            data_str,
         )
 
         # Create instance
@@ -229,13 +233,13 @@ class TestPasswordUtil(unittest.TestCase):
         plain_password = "test_password"
         hashed_password = PasswordUtil.get_password_hash(plain_password)
         self.assertTrue(
-            PasswordUtil.verify_password(plain_password, hashed_password)
+            PasswordUtil.verify_password(plain_password, hashed_password),
         )
 
         # 测试验证错误密码
         wrong_password = "wrong_password"
         self.assertFalse(
-            PasswordUtil.verify_password(wrong_password, hashed_password)
+            PasswordUtil.verify_password(wrong_password, hashed_password),
         )
 
     def test_get_password_hash(self):
@@ -268,9 +272,6 @@ class TestJwt(unittest.TestCase):
     def test_decode_invalid_signature(self):
         payload = {"id": 1, "username": "testuser"}
         jwt_token = self.jwt_util.get_jwt(payload)
-        from jose import jwt
-
-        jwt.decode
 
         with patch("jose.jwt.decode") as mock_jwt_decode:
             mock_jwt_decode.side_effect = JOSEError

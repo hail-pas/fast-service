@@ -1,3 +1,8 @@
+[build-system]
+requires = ["poetry>=1.5.1"]
+build-backend = "poetry.core.masonry.api"
+
+
 [tool.poetry]
 name = "FastApi Start Kit"
 version = "v0.01"
@@ -8,6 +13,7 @@ authors = ["phoenix <hypofiasco@gmail.com>"]
 python = ">=3.9.0,<3.12"
 ipython = "8.11.0"
 fastapi = "0.95.0"
+starlette-context = "0.3.6"
 ujson = "2.0.3"
 httpx = "0.23.3"
 pycryptodomex = "3.17"
@@ -18,7 +24,7 @@ python-jose = { extras = ["cryptography"], version = "3.3.0" }
 python-multipart = "0.0.6"
 uvicorn = { extras = ["standard"], version = "0.21.1" }
 gunicorn = "20.1.0"
-loguru = "0.6.0"
+loguru = "0.7.0"
 aioredis = "2.0.1"
 aiofiles = { extras = ["hiredis"], version = "23.1.0" }
 sentry-sdk = { extras = ["fastapi"], version = "1.17.0" }
@@ -28,7 +34,6 @@ grpcio-tools = "1.51.3"
 tortoise-orm = { extras = ["aiomysql"], version = "0.19.3" }
 fastapi-cache2 = { extras = ["redis"], version = "0.2.1" }
 fastapi-pagination = {extras = ["tortoise-orm"], version = "^0.11.4"}
-mypy = "1.1.1"
 typer = "0.7.0"
 aerich = "0.7.1"
 elasticsearch = { extras = ["async"], version = "7.8.0" }
@@ -39,14 +44,19 @@ rich = "13.3.5"
 
 [tool.poetry.dev-dependencies]
 # poetry install --no-dev
-requests = "2.28.2"
+# pre-commit = "3.3.2"
 pytest-asyncio = "0.21.0"
-factory-boy = "3.2.1"
-bandit = "1.7.5"
+mypy = "1.1.1"
 black = "23.1.0"
-flake8 = "6.0.0"
 isort = "5.12.0"
-
+ruff = "0.0.270"          # code check
+freezegun = "1.2.1"       # datetime freeze test
+httpretty = "1.1.4"       # tcp level mock request data
+factory-boy = "3.2.1"     # fake data generate
+hypothesis = "6.74.0"     # roperty-based tests, range fake data generate cases
+mimesis = "10.1.0"        # fake data generate
+py-spy = "0.3.14"         # profile
+pyinstrument = "4.4.0"    # profile
 
 # [[tool.poetry.source]]
 # name = "local"
@@ -59,12 +69,98 @@ tortoise_orm = "storages.relational.migrate.env.TORTOISE_ORM_CONFIG"
 location = "storages/relational/migrate/versions"
 src_folder = "./."
 
+# code check
 
-[build-system]
-requires = ["poetry>=1.1.6"]
-build-backend = "poetry.masonry.api"
+[tool.isort]
+atomic = true
+profile = "black"
+use_parentheses = true
+ensure_newline_before_comments = true
 
-# pip install --trusted-host 192.168.3.59 --index-url http://192.168.3.59:8082/simple/ poetry==1.4.2
+[tool.black]
+line-length = 79
+target-version = ["py39"]
+
+[tool.ruff]
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
+select = [
+    "E",    # pycodestyle error
+    "W",    # pycodestyle warning
+    "F",    # pyflakes
+    "UP",  # pyupgrade
+    # "D",   # pydocstyle
+    "B",    # flake8-bugbear
+    # "ANN",  # annotation
+    "ASYNC",
+    "COM",
+    "C4",
+    "DTZ",  # datetime zoneinfo
+    "T10",
+    "EXE",
+    "ISC",
+    "ICN",
+    "G",
+    "PIE",
+    "Q",
+    "RSE",
+    "RET",
+    "SIM",  # simplify code
+    "TID",
+    "TD",
+    "PD",
+    "PLC",
+    "PLE",
+    "PLW",
+    "FLY",
+    "NPY",
+]
+ignore = ["B008"]  # function call in argument defaults, like Query, Depends. need ignore
+# file ignore -> # ruff: noqa
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
+unfixable = []
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "storages/relational/migrate/versions/"
+]
+per-file-ignores = {}
+
+line-length = 120
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+target-version = "py39"
+
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+
+# pip install --trusted-host 192.168.3.59 --index-url http://192.168.3.59:8082/simple/ poetry==1.5.1
 # If poetry install failed, excute follow shell command
 # shell
 # >>> poetry cache clear . --all

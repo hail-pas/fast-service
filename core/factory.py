@@ -31,18 +31,17 @@ def amount_apps(main_app: FastAPI):
     from apis import roster
 
     for app_or_router, prefix_path, name in roster:
-        assert prefix_path == "" or prefix_path.startswith(
-            "/"
+        assert not prefix_path or prefix_path.startswith(
+            "/",
         ), "Routed paths must start with '/'"
         if isinstance(app_or_router, FastAPI):
-            main_app.mount(prefix_path, app_or_router, name)
+            main_app.mount(prefix_path or "", app_or_router, name)
         elif isinstance(app_or_router, APIRouter):
             main_app.include_router(app_or_router)
 
 
 def setup_middleware(main_app: FastAPI):
-    """
-    ./middlewares 文件中的定义中间件
+    """./middlewares 文件中的定义中间件
     :param main_app:
     :return:
     """
@@ -50,7 +49,7 @@ def setup_middleware(main_app: FastAPI):
 
     from core.middlewares import roster
 
-    for middle_fc in roster:
+    for middle_fc in roster[::-1]:
         try:
             if isfunction(middle_fc):
                 main_app.add_middleware(BaseHTTPMiddleware, dispatch=middle_fc)
@@ -61,25 +60,24 @@ def setup_middleware(main_app: FastAPI):
                         main_app.add_middleware(middle_fc[0], **middle_fc[1])
                     else:
                         raise RuntimeError(
-                            f"Require Dict as kwargs for middleware class, Got {type(middle_fc[1])}"
+                            f"Require Dict as kwargs for middleware class, Got {type(middle_fc[1])}",
                         )
                 else:
                     raise RuntimeError(
-                        f"Require Class, But Got {type(middle_fc[0])}"
+                        f"Require Class, But Got {type(middle_fc[0])}",
                     )
         except Exception as e:
             logger.error(f"Set Middleware Failed: {middle_fc}, Encounter {e}")
 
 
 def setup_static_app(main_app: FastAPI, current_settings: LocalConfig):
-    """
-    init static app
+    """Init static app
     :param main_app:
     :param current_settings:
     :return:
     """
     static_files_app = StaticFiles(
-        directory=current_settings.SERVER.STATIC_DIR
+        directory=current_settings.SERVER.STATIC_DIR,
     )
     main_app.mount(
         path=local_configs.SERVER.STATIC_PATH,
@@ -166,6 +164,6 @@ def create_app(current_settings: LocalConfig):
 
 
 logger.bind(json=True).info(
-    {**local_configs.PROJECT.dict(), **local_configs.SERVER.dict()}
+    {**local_configs.PROJECT.dict(), **local_configs.SERVER.dict()},
 )
 app = create_app(current_settings=local_configs)

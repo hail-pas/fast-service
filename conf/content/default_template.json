@@ -25,6 +25,10 @@
     "PORT": 8000,
     "REQUEST_SCHEME": "http"
   },
+  "PROFILING": {
+    "SECRET": "",
+    "INTERVAL": 1
+  },
   "PROJECT": {
     "UNIQUE_CODE": "FastService",
     "DEBUG": true,

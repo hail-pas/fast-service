@@ -2,7 +2,7 @@ import re
 import socket
 import string
 import ipaddress
-from typing import Tuple, Union
+from typing import Union
 
 from _socket import gaierror
 
@@ -15,12 +15,12 @@ def only_alphabetic_numeric(value: str) -> bool:
     if value is None:
         return False
     options = string.ascii_letters + string.digits + "_"
-    if not all([i in options for i in value]):
+    if not all(i in options for i in value):
         return False
     return True
 
 
-def validate_ip_or_host(value: Union[int, str]) -> Tuple[bool, str]:
+def validate_ip_or_host(value: Union[int, str]) -> tuple[bool, str]:
     try:
         return True, str(ipaddress.ip_address(value))
     except ValueError:

@@ -10,7 +10,7 @@ classproperty = _classproperty
 
 
 class SingletonDecorator:
-    def __init__(self, cls):
+    def __init__(self, cls) -> None:
         self.cls = cls
         self.instance = None
 
@@ -21,8 +21,7 @@ class SingletonDecorator:
 
 
 def timelimit(timeout: Union[int, float]):
-    """
-    A decorator to limit a function to `timeout` seconds, raising `TimeoutError`
+    """A decorator to limit a function to `timeout` seconds, raising `TimeoutError`
     if it takes longer.
         >>> import time
         >>> def meaningoflife():
@@ -37,14 +36,14 @@ def timelimit(timeout: Union[int, float]):
         42
     _Caveat:_ The function isn't stopped after `timeout` seconds but continues
     executing in a separate thread. (There seems to be no way to kill a thread.)
-    inspired by <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/473878>
+    inspired by <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/473878>.
     """
 
     def _1(function):
         @wraps(function)
         def _2(*args, **kw):
             class Dispatch(threading.Thread):
-                def __init__(self):
+                def __init__(self) -> None:
                     threading.Thread.__init__(self)
                     self.result = None
                     self.error = None

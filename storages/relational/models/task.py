@@ -11,7 +11,9 @@ class Task(UUIDPrimaryKeyModel):
     file_path = fields.CharField(max_length=128, description="模块")
     func_name = fields.CharField(max_length=100, description="函数")
     type_ = fields.CharEnumField(
-        max_length=20, enum_type=enums.TaskTypeEnum, description="任务类型"
+        max_length=20,
+        enum_type=enums.TaskTypeEnum,
+        description="任务类型",
     )
     cron = fields.CharField(max_length=100, description="定时任务表达式")
     description = fields.CharField(max_length=100, description="任务描述")
@@ -31,7 +33,7 @@ class Task(UUIDPrimaryKeyModel):
         func = getattr(module, func_name, None)
         if not func:
             raise ValueError(
-                f"module: {module_name} has no function: {func_name}"
+                f"module: {module_name} has no function: {func_name}",
             )
         return TaskProxy(
             func=func,
@@ -44,7 +46,7 @@ class Task(UUIDPrimaryKeyModel):
             enabled=self.enabled,
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"""
             "type": {self.type_},
             "file_path": {self.module},

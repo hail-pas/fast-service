@@ -46,7 +46,10 @@ LoginSchema = pydantic_model_creator(
 
 
 @router.post(
-    "/login", summary="登录", description="登录接口", response_model=Resp[AuthData]
+    "/login",
+    summary="登录",
+    description="登录接口",
+    response_model=Resp[AuthData],
 )
 async def login(login_data: LoginSchema):
     account: Optional[Account] = (
@@ -134,7 +137,7 @@ def inner_register_callback(
 )
 async def inner_register(
     register_in: AccountCreate,
-    callback_host: str
+    callback_host: str,
     # callback_url: Union[HttpUrl, None]
 ) -> SimpleSuccess:
     return SimpleSuccess()

@@ -141,3 +141,4 @@ conf/content/*
 !conf/content/default_template.json
 !conf/content/consul_template.json
 .vscode
+.ruff_cache

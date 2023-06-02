@@ -13,7 +13,7 @@ from conf.config import local_configs  # noqa
 
 
 class FastApiApplication(gunicorn.app.base.BaseApplication):
-    def __init__(self, app, options=None):
+    def __init__(self, app, options=None) -> None:
         self.options = options or {}
         self.application = app
         super().__init__()
@@ -81,8 +81,7 @@ if __name__ == "__main__":
     # import sys
     asyncio.get_event_loop().run_until_complete(run_migrations())
     options = {
-        "bind": "%s:%s"
-        % (local_configs.SERVER.HOST, local_configs.SERVER.PORT),
+        "bind": f"{local_configs.SERVER.HOST}:{local_configs.SERVER.PORT}",
         "workers": local_configs.SERVER.WORKERS_NUM,
         "worker_class": "uvicorn.workers.UvicornWorker",
         "debug": local_configs.PROJECT.DEBUG,

@@ -1,5 +1,4 @@
-"""
-GRPC Service Build Steps:
+"""GRPC Service Build Steps:
     > GRPC Server Stub  <--protocol buffers-->  GRPC Client Stub
 1. Define data format with protocol buffers
 2. Generate protocol buffers code and client/server code

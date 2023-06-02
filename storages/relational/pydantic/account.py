@@ -1,5 +1,4 @@
 import uuid
-from typing import List
 from datetime import datetime
 
 from pydantic import Field, BaseModel, validator
@@ -28,13 +27,13 @@ class AccountDetail(
         Account,
         name="AccountDetail",
         exclude=["password"],
-    )
+    ),
 ):
-    roles: List[RoleList] = Field([], description="角色列表")
+    roles: list[RoleList] = Field([], description="角色列表")
 
 
 class AccountDetailWithResource(AccountDetail):
-    systems: List[SystemListWithRoles] = Field([], description="系统列表")
+    systems: list[SystemListWithRoles] = Field([], description="系统列表")
     # resources: List[ResourceLevelTreeNode] = Field([], description="资源列表")
 
 
@@ -44,9 +43,9 @@ class AccountCreate(
         name="AccountCreate",
         exclude=["deleted_at", "status", "last_login_at"],
         exclude_readonly=True,
-    )
+    ),
 ):
-    roles: List[uuid.UUID] = Field(..., description="角色id列表")
+    roles: list[uuid.UUID] = Field(..., description="角色id列表")
 
     @validator("password")
     def gen_password_hash(cls, v):
@@ -60,7 +59,7 @@ class AccountUpdate(
         name="AccountUpdate",
         exclude=["deleted_at", "last_login_at"],
         exclude_readonly=True,
-    )
+    ),
 ):
     pass
 

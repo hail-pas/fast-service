@@ -11,7 +11,7 @@ stub = hello_pb2_grpc.HelloStub(channel)
 
 def request_iterator():
     for _ in range(10):
-        num = random.choice(range(10))
+        num = random.choice(range(10))  # noqa
         temp = generate_hello_in()
         temp.name = f"req{num}"
         temp.age = num

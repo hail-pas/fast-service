@@ -2,7 +2,7 @@ import abc
 import enum
 import string
 import asyncio
-from typing import Any, Set, List, Type, Optional
+from typing import Any, Optional
 from functools import partial
 
 import httpx
@@ -33,7 +33,14 @@ class Response:
     data: Any = None
     request_context: dict
 
-    def __init__(self, success, status_code, data, request_context, **kwargs):
+    def __init__(
+        self,
+        success,
+        status_code,
+        data,
+        request_context,
+        **kwargs,
+    ) -> None:
         self.success = success
         self.status_code = status_code
         self.data = data
@@ -46,18 +53,22 @@ class Response:
 
     @classmethod
     def parse_response(
-        cls, raw_response: httpx.Response, request_context
+        cls,
+        raw_response: httpx.Response,
+        request_context,
     ) -> "Response":
         raise NotImplementedError
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"success: {self.success}, status_code: {self.status_code}"
 
 
 class DefaultResponse(Response):
     @classmethod
     def parse_response(
-        cls, raw_response: httpx.Response, request_context
+        cls,
+        raw_response: httpx.Response,
+        request_context,
     ) -> "Response":
         status_code = raw_response.status_code
         success = False
@@ -84,7 +95,7 @@ class APIBaseConfig:
     params: dict
     data: dict
     json: dict
-    response_cls: Type[Response]
+    response_cls: type[Response]
     timeout: int
     cookies: dict
 
@@ -98,10 +109,10 @@ class APIBaseConfig:
         params: dict = None,
         data: dict = None,
         json: dict = None,
-        response_cls: Type[Response] = None,
+        response_cls: type[Response] = None,
         cookies: dict = None,
         timeout: int = None,
-    ):
+    ) -> None:
         if name and isinstance(self, API):
             assert (
                 only_alphabetic_numeric(name) and name[0] not in string.digits
@@ -125,7 +136,7 @@ class APIBaseConfig:
         self.cookies = cookies
         self.timeout = timeout
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.name
 
 
@@ -141,14 +152,14 @@ class API(APIBaseConfig):
         protocol: str = None,
         host: str = None,
         port: Optional[int] = None,
-        response_cls: Type[Response] = None,
+        response_cls: type[Response] = None,
         headers: dict = None,
         cookies: dict = None,
         params: dict = None,
         data: dict = None,
         json: dict = None,
         timeout: int = None,
-    ):
+    ) -> None:
         assert name, "name cannot be empty"
         method = method.lower()
         assert method in [
@@ -173,8 +184,8 @@ class API(APIBaseConfig):
 
 
 class Third(APIBaseConfig):
-    apis: Set[API] = set()
-    _api_names: Set[str] = set()
+    apis: set[API] = set()
+    _api_names: set[str] = set()
     # _request = requests.request
     api_key: Optional[str] = None
     sign_key: Optional[str] = None
@@ -184,9 +195,9 @@ class Third(APIBaseConfig):
         name: str,
         protocol: str,
         host: str,
-        response_cls: Type[Response],
+        response_cls: type[Response],
         port: Optional[int] = None,
-        apis: List[API] = None,
+        apis: list[API] = None,
         headers: dict = None,
         params: dict = None,
         data: dict = None,
@@ -194,10 +205,10 @@ class Third(APIBaseConfig):
         cookies: dict = None,
         timeout: int = 6,
         # request: Optional[Callable] = None,
-    ):
+    ) -> None:
         assert all(
-            [name, protocol, host, response_cls]
-        ), f"value required parameters: {', '.join(['name', 'protocol', 'host', 'headers', 'data', 'response'])}"
+            [name, protocol, host, response_cls],
+        ), f"value required parameters: {', '.join(['name', 'protocol', 'host', 'headers', 'data', 'response'])}"  # noqa
         super().__init__(
             name="",
             protocol=protocol,
@@ -217,14 +228,12 @@ class Third(APIBaseConfig):
             for api in apis:
                 assert (
                     all(
-                        [
-                            i
-                            in string.ascii_lowercase
-                            + string.ascii_uppercase
-                            + string.digits
-                            + "_"
-                            for i in api.name
-                        ]
+                        i
+                        in string.ascii_lowercase
+                        + string.ascii_uppercase
+                        + string.digits
+                        + "_"
+                        for i in api.name
                     )
                     and api.name[0] not in string.digits
                 ), "illegal api name"
@@ -238,14 +247,12 @@ class Third(APIBaseConfig):
     def register_api(self, api: API):
         assert (
             all(
-                [
-                    i
-                    in string.ascii_lowercase
-                    + string.ascii_uppercase
-                    + string.digits
-                    + "_"
-                    for i in api.name
-                ]
+                i
+                in string.ascii_lowercase
+                + string.ascii_uppercase
+                + string.digits
+                + "_"
+                for i in api.name
             )
             and api.name[0] not in string.digits
         ), "illegal api name"
@@ -334,7 +341,7 @@ class Third(APIBaseConfig):
                     "request_context": request_context,
                     "request_error": repr(e),
                     "raw_response": None,
-                }
+                },
             )
             return response_cls(
                 success=False,
@@ -353,7 +360,7 @@ class Third(APIBaseConfig):
                     "Trigger": f"Third-{self.name}",
                     "request_context": request_context,
                     "response": response,
-                }
+                },
             )
 
             return self.parse_response(
@@ -364,14 +371,17 @@ class Third(APIBaseConfig):
             )
 
     def parse_response(
-        self, api: API, request_context: dict, raw_response, response_cls=None
+        self,
+        api: API,
+        request_context: dict,
+        raw_response,
+        response_cls=None,
     ):
         if not response_cls:
             response_cls = self.response_cls
             if api.response_cls:
                 response_cls = api.response_cls
-        _response = response_cls.parse_response(raw_response, request_context)
-        return _response
+        return response_cls.parse_response(raw_response, request_context)
 
 
 if __name__ == "__main__":
@@ -383,8 +393,11 @@ if __name__ == "__main__":
 
     google_apis = [
         API(
-            "search", method="GET", uri="/search", response_cls=DefaultResponse
-        )
+            "search",
+            method="GET",
+            uri="/search",
+            response_cls=DefaultResponse,
+        ),
     ]
     google_api = GoogleAPI(
         name="GoogleAPI",

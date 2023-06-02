@@ -1,32 +1,33 @@
-checkfiles = core/ apis/ common/ conf/ deploy/ storages/ third_apis/ extensions/ scripts/ tests/ extensions/ entrypoint/
-black_opts = -l 79 -t py39
-py_warn = PYTHONDEVMODE=1
-flake8config = .flake8
-
+DIRS = core/ apis/ common/ conf/ deploy/ storages/ third_apis/ extensions/ scripts/ tests/ extensions/ entrypoint/ tasks/
+# --disable-warnings
 help:
 	@echo "FastService development makefile"
 	@echo
 	@echo  "usage: make <target>"
 	@echo  "Targets:"
-	@echo  "    up			Updates dependencies"
 	@echo  "    deps		Ensure dependencies are installed"
+	@echo  "    up			Updates dependencies"
+	@echo  "	test		run pytest"
 	@echo  "    style		Auto-formats the code"
 	@echo  "    check		Checks that build is sane"
+	@echo  "	pre-commit	mannually execute pre-commit"
 
-up:
-	@poetry update
 
 deps:
 	@poetry install --no-root
 
+up:
+	@poetry update
+
 style:
-	@poetry run isort --length-sort -src $(checkfiles)
-	@poetry run black $(black_opts) $(checkfiles)
+	isort --length-sort -src $(DIRS)
+	black $(DIRS)
 
 check:
-	@poetry run black --check $(black_opts) $(checkfiles) || (echo "Please run 'make style' to auto-fix style issues" && false)
-	@poetry run flake8 --max-line-length=120 --ignore=E131,W503,E203 $(checkfiles) --exclude=*/migrate/*
-# poetry run bandit -r $(checkfiles)
+	ruff check --fix .
+
+pre-commit:
+	pre-commit run --all-files
 
 test:
-	@pytest --disable-warnings
+	@pytest -p no:warnings

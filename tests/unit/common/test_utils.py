@@ -54,8 +54,8 @@ class TestCommify(unittest.TestCase):
         self.assertEqual(commify(-1234.56789), "-1,234.56789")
 
     def test_string_input(self):
-        self.assertRaises(ValueError, commify, "123")
-        self.assertRaises(ValueError, commify, "12.34")
+        self.assertRaises(TypeError, commify, "123")
+        self.assertRaises(TypeError, commify, "12.34")
 
     def test_none_input(self):
         self.assertEqual(commify(None), None)
@@ -73,7 +73,8 @@ class TestMapper(unittest.TestCase):
 
     def test_dict(self):
         self.assertEqual(
-            mapper(lambda x: x * 2, {"a": 1, "b": 2}), {"a": 2, "b": 4}
+            mapper(lambda x: x * 2, {"a": 1, "b": 2}),
+            {"a": 2, "b": 4},
         )
 
     def test_nested_dict(self):
@@ -84,12 +85,14 @@ class TestMapper(unittest.TestCase):
 
     def test_nested_list(self):
         self.assertEqual(
-            mapper(lambda x: x * 2, [[1, 2], [3, 4]]), [[2, 4], [6, 8]]
+            mapper(lambda x: x * 2, [[1, 2], [3, 4]]),
+            [[2, 4], [6, 8]],
         )
 
     def test_mixed_list(self):
         self.assertEqual(
-            mapper(lambda x: x * 2, [1, {"a": 2}, [3]]), [2, {"a": 4}, [6]]
+            mapper(lambda x: x * 2, [1, {"a": 2}, [3]]),
+            [2, {"a": 4}, [6]],
         )
 
     def test_mixed_dict(self):
@@ -115,7 +118,8 @@ class TestTimeConversion(unittest.TestCase):
     def test_seconds_to_format_str_with_tzinfo(self):
         tz = ZoneInfo("America/Los_Angeles")
         self.assertEqual(
-            seconds_to_format_str(0, tzinfo=tz), "1969-12-31 16:00:00"
+            seconds_to_format_str(0, tzinfo=tz),
+            "1969-12-31 16:00:00",
         )
 
     def test_format_str_to_seconds_default(self):
@@ -123,20 +127,22 @@ class TestTimeConversion(unittest.TestCase):
 
     def test_format_str_to_seconds_custom_format(self):
         self.assertEqual(
-            format_str_to_seconds("1970-01-01", "%Y-%m-%d"), -28800
+            format_str_to_seconds("1970-01-01", "%Y-%m-%d"),
+            -28800,
         )
 
     def test_format_str_to_seconds_with_tzinfo(self):
         tz = ZoneInfo("UTC")
         self.assertEqual(
-            format_str_to_seconds("1970-01-01 00:00:00", tzinfo=tz), 0
+            format_str_to_seconds("1970-01-01 00:00:00", tzinfo=tz),
+            0,
         )
 
     def test_format_str_to_seconds_with_datetime(self):
         tz = ZoneInfo("America/Los_Angeles")
         self.assertEqual(
             format_str_to_seconds(
-                datetime.datetime(1970, 1, 1, 0, 0, tzinfo=tz)
+                datetime.datetime(1970, 1, 1, 0, 0, tzinfo=tz),
             ),
             -28800,
         )

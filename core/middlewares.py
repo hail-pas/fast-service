@@ -1,59 +1,90 @@
-import time
-
 from loguru import logger
-from fastapi import Response
+from pyinstrument import Profiler
+from starlette.types import Send, Scope, Message, Receive
+from fastapi.responses import HTMLResponse
+from starlette_context import request_cycle_context
+
+# from fastapi import Response
 from starlette.requests import Request
+from starlette_context.errors import MiddleWareValidationError
 from starlette.middleware.base import (
-    BaseHTTPMiddleware,
     RequestResponseEndpoint,
-)
+)  # BaseHTTPMiddleware,
 from starlette.middleware.cors import CORSMiddleware
+from starlette_context.middleware import RawContextMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from conf.config import local_configs
-from common.utils import get_or_set_request_id
-from common.loguru import log_info_request
+from common.context import (
+    RequestIdPlugin,
+    RequestProcessInfoPlugin,
+    RequestStartTimestampPlugin,
+)
 
 
-# 执行顺序：从上到下
-async def base_request_middleware(
-    request: Request, call_next: RequestResponseEndpoint
+class LogWithContextMiddleware(RawContextMiddleware):
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        if scope["type"] not in ("http", "websocket"):  # pragma: no cover
+            await self.app(scope, receive, send)
+            return None
+
+        async def send_wrapper(message: Message) -> None:
+            for plugin in self.plugins:
+                await plugin.enrich_response(message)
+            await send(message)
+
+        request = self.get_request_object(scope, receive, send)
+
+        try:
+            context = await self.set_context(request)
+        except MiddleWareValidationError as e:
+            error_response = e.error_response or self.error_response
+            return await self.send_response(error_response, send)
+
+        with request_cycle_context(context), logger.contextualize(
+            request_id=context.get(RequestIdPlugin.key),
+        ):
+            await self.app(scope, receive, send_wrapper)
+            return None
+
+
+async def profile_request(
+    request: Request,
+    call_next: RequestResponseEndpoint,
 ):
-    start_time = time.time()
-    request_id = get_or_set_request_id()
-    with logger.contextualize(request_id=request_id):
-        # 请求id
-        response = await call_next(request)
-        response.headers["X-Request-ID"] = request_id
-
-        # 请求处理时间
-        process_time = time.time() - start_time
-        response.headers["X-Process-Time"] = str(int(process_time * 1000))
-
-        # 请求相关信息
-        await log_info_request(request, response)
-
-        return response
-
-
-class LoggingReqRespMiddleware(BaseHTTPMiddleware):
-    """logging middleware."""
-
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
-        # 未使用
-
-        # logger.info()  # 请求内容
-        response = await call_next(request)
-        # logger.info(response)
-        return response  # 响应内容
+    need_profile = request.query_params.get("profile", False)
+    secret = request.query_params.get("secret", "")
+    if need_profile and secret == local_configs.PROFILING.SECRET:
+        profiler = Profiler(
+            interval=local_configs.PROFILING.INTERVAL,
+            async_mode="enabled",
+        )
+        profiler.start()
+        await call_next(request)
+        profiler.stop()
+        return HTMLResponse(profiler.output_html())
+    return await call_next(request)
 
 
 roster = [
-    # Middleware Func
-    base_request_middleware,
-    # Middleware Class
+    # >>>>> Middleware Func
+    [
+        LogWithContextMiddleware,
+        {
+            "plugins": (
+                RequestStartTimestampPlugin(),
+                RequestIdPlugin(),
+                RequestProcessInfoPlugin(),
+            ),
+        },
+    ],
+    # profile_request,
+    # >>>>> Middleware Class
     [
         CORSMiddleware,
         {

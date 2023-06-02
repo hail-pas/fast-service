@@ -25,20 +25,17 @@ class Account(BaseModel):
     # reversed relations
     roles: fields.ManyToManyRelation["Role"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.username}-{self.phone}"
 
     def status_display(self) -> str:
-        """
-        状态显示
-        """
+        """状态显示."""
         return self._meta.fields_map.get("status").enum_type.dict.get(
-            self.status.value
+            self.status.value,
         )
 
     def days_from_last_login(self) -> Optional[int]:
-        """
-        距上一次登录天数
+        """距上一次登录天数
         :return:
         """
         if not self.last_login_at:
@@ -78,7 +75,7 @@ class Permission(UUIDPrimaryKeyModel):
 
 
 class System(BaseModel):
-    """Organization"""
+    """Organization."""
 
     code = fields.CharField(max_length=64, description="系统唯一标识", unique=True)
     label = fields.CharField(max_length=128, description="系统名称")
@@ -93,14 +90,22 @@ class System(BaseModel):
 
 class Resource(BaseModel):
     parent = fields.ForeignKeyField(
-        "master.Resource", related_name="children", null=True, description="父级"
+        "master.Resource",
+        related_name="children",
+        null=True,
+        description="父级",
     )
     code = fields.CharField(
-        max_length=32, description="资源编码{parent}:{current}", index=True
+        max_length=32,
+        description="资源编码{parent}:{current}",
+        index=True,
     )
     label = fields.CharField(max_length=64, description="资源名称", index=True)
     front_route = fields.CharField(
-        max_length=128, description="前端路由", null=True, blank=True
+        max_length=128,
+        description="前端路由",
+        null=True,
+        blank=True,
     )
     type = fields.CharField(
         max_length=16,
@@ -126,7 +131,8 @@ class Resource(BaseModel):
         Permission
     ] = fields.ManyToManyField("master.Permission", related_name="resources")
     systems: fields.ManyToManyRelation["System"] = fields.ManyToManyField(
-        "master.System", related_name="resources"
+        "master.System",
+        related_name="resources",
     )
     # available_front_end = fields.JSONField(
     #     default=list, description="可用的终端类型标签"
@@ -147,16 +153,19 @@ class Role(BaseModel):
     code = fields.CharField(max_length=32, description="角色编码", index=True)
     label = fields.CharField(max_length=64, description="角色名称", index=True)
     accounts: fields.ManyToManyRelation[Account] = fields.ManyToManyField(
-        "master.Account", related_name="roles"
+        "master.Account",
+        related_name="roles",
     )
     permissions: fields.ManyToManyRelation[
         Permission
     ] = fields.ManyToManyField("master.Permission", related_name="roles")
     resources: fields.ManyToManyRelation[Resource] = fields.ManyToManyField(
-        "master.Resource", related_name="roles"
+        "master.Resource",
+        related_name="roles",
     )
     systems: fields.ManyToManyRelation["System"] = fields.ManyToManyField(
-        "master.System", related_name="roles"
+        "master.System",
+        related_name="roles",
     )
 
     class Meta:

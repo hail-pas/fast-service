@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import os
 import ast
 import gzip
@@ -25,7 +23,10 @@ def main():
     if not os.path.exists(txt_fn_gz):
         print(f"Demo txt does not exist: {txt_fn_gz}, creating now.")
         check_call(
-            ["python", f"{BASE_DIR.absolute()}/literal_eval_gen_bench_data.py"]
+            [
+                "python",
+                f"{BASE_DIR.absolute()}/literal_eval_gen_bench_data.py",
+            ],
         )
 
     t = time.time()
@@ -43,12 +44,14 @@ def main():
         return
 
     print(
-        "compile:", timeit.timeit(lambda: compile(txt, "<>", "exec"), number=1)
+        "compile:",
+        timeit.timeit(lambda: compile(txt, "<>", "exec"), number=1),
     )
     print(
         "parse:",
         timeit.timeit(
-            lambda: compile(txt, "<>", "exec", ast.PyCF_ONLY_AST), number=1
+            lambda: compile(txt, "<>", "exec", ast.PyCF_ONLY_AST),
+            number=1,
         ),
     )
     print("eval:", timeit.timeit(lambda: eval(txt), number=1))

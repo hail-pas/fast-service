@@ -15,13 +15,13 @@ from storages.relational.pydantic.account import (
 
 async def get_auth_data(account: Account) -> AuthData:
     expired_at = datetime_now() + timedelta(
-        minutes=local_configs.JWT.EXPIRATION_DELTA_MINUTES
+        minutes=local_configs.JWT.EXPIRATION_DELTA_MINUTES,
     )
     payload = JwtPayload(account_id=account.id, expired_at=expired_at)
     data = {
         "token_type": "Bearer",
         "access_token": Jwt(local_configs.JWT.SECRET).get_jwt(
-            json.loads(payload.json())
+            json.loads(payload.json()),
         ),
         "expired_at": expired_at,
         "account": await AccountDetailWithResource.from_tortoise_orm(account),
@@ -31,7 +31,7 @@ async def get_auth_data(account: Account) -> AuthData:
     #     system=await System.get(code="default"), role=account.roles[0]
     # )
     data["account"].systems = await SystemListWithRoles.from_queryset(
-        System.filter(roles__in=await account.roles.all())
+        System.filter(roles__in=await account.roles.all()),
     )
     return AuthData(**data)
 
@@ -41,12 +41,12 @@ async def get_permissions(account: Account, role: Role) -> set:
         flatten_list(
             await account.roles.filter(id=role.id)
             .prefetch_related("permissions", "resources")
-            .values_list("permissions__code", "resources__permissions__code")
-        )
+            .values_list("permissions__code", "resources__permissions__code"),
+        ),
     )
 
     # for role in await account.roles.all().prefetch_related("permissions", "resources"):
     #     permission_set |= set(await role.permissions.all().values_list("code", flat=True))
     #     for resource in await role.resources.all():
     #         permission_set |= set(await resource.permissions.all().values_list("code", flat=True))
-    return permission_set
+    return permission_set  # noqa

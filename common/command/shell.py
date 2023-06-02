@@ -26,7 +26,7 @@ async def init_ctx():
 
 @cli.command("shell", short_help="命令行模式")
 def shell():
-    import pdb
+    import pdb  # noqa
     import cProfile
     import importlib
 
@@ -41,7 +41,7 @@ def shell():
             # **models,
             "ipdb": pdb,
             "cProfile": cProfile,
-        }
+        },
     )
     conf = Config()
     conf.InteractiveShellApp.exec_lines = [

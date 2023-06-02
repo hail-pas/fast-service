@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union
+from typing import Union
 
 from fastapi import Query, Depends, APIRouter
 
@@ -13,12 +13,13 @@ router = APIRouter(prefix="/common", route_class=RespSchemaAPIRouter)
     "/enum",
     description="枚举-列表",
     summary="枚举表",
-    response_model=Resp[Union[Dict, Tuple[Tuple]]],
+    response_model=Resp[Union[dict, tuple[tuple]]],
 )
 async def enum_content(
     enum_content=Depends(enums.get_enum_content),
     format: enums.RespFormatEnum = Query(
-        default=enums.RespFormatEnum.json_, description="返回格式"
+        default=enums.RespFormatEnum.json_,
+        description="返回格式",
     ),
 ):
     data = enum_content
@@ -26,4 +27,4 @@ async def enum_content(
         data = []
         for k, v in enum_content.items():
             data.append((k, tuple(v.items())))
-    return Resp[Union[dict, Tuple]](data=data)
+    return Resp[Union[dict, tuple]](data=data)

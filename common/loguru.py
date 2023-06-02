@@ -1,7 +1,6 @@
 import os
 import ast
 import sys
-import enum
 import logging
 import traceback
 from enum import Enum
@@ -10,13 +9,12 @@ from typing import cast
 from itertools import chain
 
 from loguru import logger
-from fastapi import Request, Response
 from gunicorn import glogging
 from rich.console import Console
 
 from conf.config import BASE_DIR, EnvironmentEnum, local_configs
 from common.types import StrEnumMore
-from common.utils import datetime_now, get_client_ip, get_request_id
+from common.utils import datetime_now
 
 # from common.responses import ResponseCodeEnum
 from common.decorators import extend_enum
@@ -101,10 +99,10 @@ class InterceptHandler(logging.Handler):
         # if DynamicLogLevelConfig.get(name, to_int_level(LOG_LEVEL)) > to_int_level(level):
         #     return
 
-        _logger = logger
-        request_id = get_request_id()
-        if request_id:
-            _logger = _logger.bind(request_id=request_id)
+        # _logger = logger
+        # request_id =
+        # if request_id:
+        #     _logger = _logger.bind(request_id=request_id)
 
         if record.exc_info:
             # 异常日志处理
@@ -119,8 +117,8 @@ class InterceptHandler(logging.Handler):
                 # 获取最后一个堆栈帧的文件名和行号
                 file_name, line_num, func_name, code_str = tb[-1]
                 location = f"{file_name}:{func_name}:{line_num}"
-                _logger.bind(location=location).critical(
-                    traceback.format_exc()
+                logger.bind(location=location).critical(
+                    traceback.format_exc(),
                 )
             return
 
@@ -129,7 +127,7 @@ class InterceptHandler(logging.Handler):
             frame = cast(FrameType, frame.f_back)
             depth += 1
 
-        _logger.opt(depth=depth, exception=record.exc_info).log(
+        logger.opt(depth=depth, exception=record.exc_info).log(
             level,
             record.getMessage(),
         )
@@ -182,7 +180,7 @@ def json_sink(message):
     #     }
     #     color = level_color.get(serialized["level"], ColorEnum.no_color.value)
     # print(f"{color}{serialized}")
-    if local_configs.PROJECT.ENVIRONMENT == EnvironmentEnum.development.value:
+    if EnvironmentEnum.development.value == local_configs.PROJECT.ENVIRONMENT:
         console.print_json(data=serialized)
     else:
         print(serialized)
@@ -197,7 +195,8 @@ class GunicornLogger(glogging.Logger):
             LoggerNameEnum.gunicorn_gunicorn.value,
         )
         setup_loguru_logging_intercept(
-            level=logging.getLevelName(LOG_LEVEL), modules=LOGGING_MODULES
+            level=logging.getLevelName(LOG_LEVEL),
+            modules=LOGGING_MODULES,
         )
 
 
@@ -232,6 +231,7 @@ def init_loguru():
     )
 
     UVICORN_LOGGING_MODULES = (
+        LoggerNameEnum.root.value,
         LoggerNameEnum.uvicorn_error.value,
         LoggerNameEnum.uvicorn_asgi.value,
         LoggerNameEnum.uvicorn_access.value,
@@ -239,7 +239,8 @@ def init_loguru():
     )
 
     setup_loguru_logging_intercept(
-        level=logging.getLevelName(LOG_LEVEL), modules=UVICORN_LOGGING_MODULES
+        level=logging.getLevelName(LOG_LEVEL),
+        modules=UVICORN_LOGGING_MODULES,
     )
 
     # Tortoise
@@ -258,32 +259,4 @@ def init_loguru():
     # disable duplicate logging
     logging.getLogger(LoggerNameEnum.root.value).handlers.clear()
     logging.getLogger("uvicorn").handlers.clear()
-
-
-@enum.unique
-class InfoLoggerNameEnum(StrEnumMore):
-    """统计数据相关日志名称."""
-
-    # 请求相关日志
-    info_request_logger = ("_info.request", "请求数据统计日志")
-
-
-async def log_info_request(request: Request, response: Response):
-    # 请求相关信息
-    info_dict = {
-        "method": request.method,
-        "uri": request.url.path,
-        # "request_id": get_request_id(),
-        "process_time": int(response.headers["X-Process-Time"]),  # ms
-        "client": get_client_ip(request),
-    }
-    response_code = int(response.headers.get("x-response-code", 200))
-    info_dict["code"] = response_code
-    # if response_code and response_code != str(ResponseCodeEnum.success.value):
-    #     response_body = [chunk async for chunk in response.body_iterator]
-    #     response.body_iterator = iterate_in_threadpool(iter(response_body))
-    #     info_dict["response_data"] = response_body[0].decode("utf-8")
-
-    logger.bind(
-        name=InfoLoggerNameEnum.info_request_logger.value, json=True
-    ).info(info_dict)
+    logging.captureWarnings(True)

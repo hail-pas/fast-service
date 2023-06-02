@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 from datetime import datetime, timedelta
 
 from tortoise import fields
@@ -34,11 +34,14 @@ class BigIntegerIDPrimaryKeyModel(Model):
 
 class TimeStampModel(Model):
     created_at = fields.DatetimeField(
-        auto_now_add=True, description="创建时间", index=True
+        auto_now_add=True,
+        description="创建时间",
+        index=True,
     )
     updated_at = fields.DatetimeField(auto_now=True, description="更新时间")
     deleted_at = fields.DatetimeField(
-        default=get_datetime_min, description="更新时间"
+        default=get_datetime_min,
+        description="更新时间",
     )
 
     class Meta:
@@ -47,7 +50,7 @@ class TimeStampModel(Model):
     async def save(
         self,
         using_db: Optional[BaseDBAsyncClient] = None,
-        update_fields: Optional[List[str]] = None,
+        update_fields: Optional[list[str]] = None,
         force_create: bool = False,
         force_update: bool = False,
     ) -> None:

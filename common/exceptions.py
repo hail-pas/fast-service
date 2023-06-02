@@ -12,16 +12,16 @@ from common.constant.messages import ValidationErrorMsgTemplates
 
 
 class ApiException(Exception):
-    """
-    非 0 的业务错误
-    """
+    """非 0 的业务错误."""
 
     code: Optional[int] = ResponseCodeEnum.failed.value
     message: Optional[str] = None
 
     def __init__(
-        self, message: str, code: int = ResponseCodeEnum.failed.value
-    ):
+        self,
+        message: str,
+        code: int = ResponseCodeEnum.failed.value,
+    ) -> None:
         self.code = code
         self.message = message
 
@@ -47,8 +47,7 @@ async def unexpected_exception_handler(request: Request, exc: Exception):
 
 
 async def http_exception_handler(request: Request, exc: HTTPException):
-    """
-    HttpException 状态码非 200 的错误
+    """HttpException 状态码非 200 的错误
     :param request:
     :param exc:
     :return:
@@ -59,9 +58,10 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
+    request: Request,
+    exc: RequestValidationError,
 ):
-    """参数校验错误"""
+    """参数校验错误."""
     logger.bind(json=True, name="validation_exception_handler").info(exc.body)
     try:
         error = exc.raw_errors[0]
@@ -91,7 +91,7 @@ async def validation_exception_handler(
             "code": ResponseCodeEnum.validation_error.value,
             "message": f"{field_name}: {msg}",
             "data": error_exc_data,
-        }
+        },
     )
 
 

@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import Field
 from tortoise.contrib.pydantic import pydantic_model_creator
 
@@ -34,13 +32,16 @@ class SystemListWithRoles(
             "resources",
             # "roles",
         ],
-    )
+    ),
 ):
-    roles: List[RoleList] = Field(..., description="角色列表")
+    roles: list[RoleList] = Field(..., description="角色列表")
 
 
 SystemCreate = pydantic_model_creator(
-    System, name="SystemCreate", exclude=["deleted_at"], exclude_readonly=True
+    System,
+    name="SystemCreate",
+    exclude=["deleted_at"],
+    exclude_readonly=True,
 )
 
 

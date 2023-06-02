@@ -42,35 +42,35 @@ from storages.relational.curd.account import get_permissions
 
 class TheBearer(HTTPBearer):
     async def __call__(
-        self, request: Request
+        self: "TheBearer",
+        request: Request,
     ) -> Optional[
         HTTPAuthorizationCredentials
     ]:  # _authorization: Annotated[Optional[str], Depends(oauth2_scheme)]
         authorization: str = request.headers.get("Authorization")
         if not authorization:
             raise ApiException(
-                ResponseCodeEnum.unauthorized.value,
-                AuthorizationHeaderMissingMsg,
+                code=ResponseCodeEnum.unauthorized.value,
+                message=AuthorizationHeaderMissingMsg,
             )
         scheme, credentials = get_authorization_scheme_param(authorization)
         if not (authorization and scheme and credentials):
             if self.auto_error:
                 raise ApiException(
-                    ResponseCodeEnum.unauthorized.value,
-                    AuthorizationHeaderInvalidMsg,
+                    code=ResponseCodeEnum.unauthorized.value,
+                    message=AuthorizationHeaderInvalidMsg,
                 )
-            else:
-                return None
+            return None
         if scheme != "Bearer":
             if self.auto_error:
                 raise ApiException(
-                    ResponseCodeEnum.unauthorized.value,
-                    AuthorizationHeaderTypeErrorMsg,
+                    code=ResponseCodeEnum.unauthorized.value,
+                    message=AuthorizationHeaderTypeErrorMsg,
                 )
-            else:
-                return None
+            return None
         return HTTPAuthorizationCredentials(
-            scheme=scheme, credentials=credentials
+            scheme=scheme,
+            credentials=credentials,
         )
 
 
@@ -80,7 +80,7 @@ auth_schema = TheBearer()
 def pure_get_pager(
     page: PositiveInt = Query(default=1, example=1, description="第几页"),
     size: PositiveInt = Query(default=10, example=10, description="每页数量"),
-):
+) -> Pager:
     return Pager(limit=size, offset=(page - 1) * size)
 
 
@@ -94,12 +94,16 @@ def paginate(
         page: PositiveInt = Query(default=1, example=1, description="第几页"),
         size: PositiveInt = Query(default=10, example=10, description="每页数量"),
         search: str = Query(
-            None, description=f"搜索关键字, 匹配字段: {', '.join(search_fields)}"
+            None,
+            description=f"搜索关键字, 匹配字段: {', '.join(search_fields)}",
         ),
         order_by: set[str] = Query(
             default=set(),
             example="-id",
-            description=f"排序字段, 多个字段用英文逗号分隔. 升序保持原字段名, 降序增加前缀-. 可选字段: {', '.join(model._meta.db_fields)}",
+            description=(
+                "排序字段, 多个字段用英文逗号分隔. 升序保持原字段名, 降序增加前缀-."
+                f"可选字段: {', '.join(model._meta.db_fields)}"
+            ),
         ),
         selected_fields: Optional[set[str]] = Query(
             default=set(),
@@ -110,7 +114,7 @@ def paginate(
             size = min(size, max_limit)
         for field in order_by:
             if field.startswith("-"):
-                field = field[1:]
+                field = field[1:]  # noqa
             if field not in model._meta.db_fields:
                 raise ApiException(
                     ObjectNotExistMsgTemplate % f"排序字段 {field} ",
@@ -143,19 +147,20 @@ async def token_required(
                 code=ResponseCodeEnum.unauthorized.value,
                 message=AuthorizationHeaderInvalidMsg,
             )
-    except ExpiredSignatureError:
+    except ExpiredSignatureError as e:
         raise ApiException(
-            code=ResponseCodeEnum.unauthorized.value, message=TokenExpiredMsg
-        )
+            code=ResponseCodeEnum.unauthorized.value,
+            message=TokenExpiredMsg,
+        ) from e
     # except jwt.JWTError:
     # raise ApiException(ResponseCodeEnum.unauthorized.value, AuthorizationHeaderInvalidMsg)
     # # 初始化全局用户信息，后续处理函数中直接使用
-    except Exception:
+    except Exception as e:
         logger.error("解析token失败: e")
         raise ApiException(
             code=ResponseCodeEnum.unauthorized.value,
             message=AuthorizationHeaderInvalidMsg,
-        )
+        ) from e
 
     account: Optional[Account] = (
         await Account.filter(id=account_id).prefetch_related("roles").first()
@@ -180,19 +185,23 @@ async def api_key_required(
     request: Request,
     api_key: str = Security(
         APIKeyHeader(
-            name="x-api-key", scheme_name="API key header", auto_error=False
-        )
+            name="X-Api-Key",
+            scheme_name="API key header",
+            auto_error=False,
+        ),
     ),
 ):
     if not api_key:
         raise ApiException(
-            message=ApikeyMissingMsg, code=ResponseCodeEnum.unauthorized.value
+            message=ApikeyMissingMsg,
+            code=ResponseCodeEnum.unauthorized.value,
         )
     if api_key == local_configs.PROJECT.API_KEY:
         return api_key
 
     raise ApiException(
-        message=ApikeyInvalidMsg, code=ResponseCodeEnum.unauthorized.value
+        message=ApikeyInvalidMsg,
+        code=ResponseCodeEnum.unauthorized.value,
     )
 
 
@@ -221,7 +230,9 @@ async def api_permission_check(
 async def sign_check(
     request: Request,
     x_timestamp: int = Header(
-        ..., example=int(time.time()), description="秒级时间戳"
+        ...,
+        example=int(time.time()),
+        description="秒级时间戳",
     ),
     x_signature: str = Header(..., example="sign", description="签名"),
 ):
@@ -232,13 +243,14 @@ async def sign_check(
         try:
             sign_str = await request.body()
             sign_str = sign_str.decode()
-        except Exception:
-            raise ApiException(JsonRequiredMsg)
+        except Exception as e:
+            raise ApiException(JsonRequiredMsg) from e
     sign_str = sign_str + f".{x_timestamp}"
     if int(time.time()) - x_timestamp > 60:
         raise ApiException(TimestampExpiredMsg)
     if not x_signature or not SignAuth(local_configs.SIGN_SECRET).verify(
-        x_signature, sign_str
+        x_signature,
+        sign_str,
     ):
         raise ApiException(SignCheckErrorMsg)
 
@@ -246,7 +258,9 @@ async def sign_check(
 class CheckAllowedHost:
     allowed_hosts: set
 
-    def __init__(self, allowed_hosts: set = {"*"}) -> None:
+    def __init__(self, allowed_hosts: Optional[set] = None) -> None:
+        if not allowed_hosts:
+            allowed_hosts = {"*"}
         self.allowed_hosts = allowed_hosts
 
     def __call__(self, request: Request):
