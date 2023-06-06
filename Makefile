@@ -1,4 +1,4 @@
-DIRS = core/ apis/ common/ conf/ deploy/ storages/ third_apis/ extensions/ scripts/ tests/ extensions/ entrypoint/ tasks/
+DIRS = core/ apis/ common/ conf/ deploy/ storages/ third_apis/ extensions/ scripts/ tests/ extensions/ entrypoint/ tasks/ releases/
 # --disable-warnings
 help:
 	@echo "FastService development makefile"

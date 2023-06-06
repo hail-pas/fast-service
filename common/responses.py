@@ -18,11 +18,11 @@ from common.pydantic import DateTimeFormatConfig
 class AesResponse(JSONResponse):
     """响应：
     res = {
-        "code": 100200,
-        "responseTime": "datetime",
-        "message": "message",  # 当code不等于100200表示业务错误，该字段返回错误信息
-        "data": "data"    # 当code等于100200表示正常调用，该字段返回正常结果
-        "traceId": "traceId"  # 请求唯一标识
+        "code": 0,
+        "response_time": "datetime",
+        "message": "message",  # 可选信息
+        "data": "data"    # 当code等于0表示正常调用，该字段返回正常结果
+        "trace_id": "trace_id"  # 请求唯一标识
         }
     不直接使用该Response， 使用下面的响应Model - 具有校验/生成文档的功能.
     """
@@ -44,11 +44,11 @@ class AesResponse(JSONResponse):
         )
 
     def render(self, content: dict) -> bytes:
-        # update responseTime
-        content["responseTime"] = datetime_now().strftime(
+        # update response_time
+        content["response_time"] = datetime_now().strftime(
             DATETIME_FORMAT_STRING,
         )
-        content["traceId"] = context.get(ContextKeyEnum.request_id.value)
+        content["trace_id"] = context.get(ContextKeyEnum.request_id.value)
         # if not get_settings().DEBUG:
         #     content = AESUtil(local_configs.AES.SECRET).encrypt_data(ujson.dumps(content))
         return super().render(content)
@@ -64,10 +64,10 @@ class Resp(GenericModel, Generic[DataT]):
         default=ResponseCodeEnum.success.value,
         description=f"业务响应代码, {ResponseCodeEnum.dict}",
     )
-    responseTime: datetime = Field(default=None, description="响应时间")
+    response_time: datetime = Field(default=None, description="响应时间")
     message: Optional[str] = Field(default=None, description="响应提示信息")
     data: Optional[DataT] = Field(default=None, description="响应数据格式")
-    traceId: Optional[str] = Field(default=None, description="请求唯一标识")
+    trace_id: Optional[str] = Field(default=None, description="请求唯一标识")
 
     # def __init__(__pydantic_self__, **data: Any):
     #     super().__init__(**data)

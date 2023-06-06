@@ -9,15 +9,20 @@ tool_typer = typer.Typer(short_help="工具")
 src = pathlib.Path(__file__).parent.parent
 
 DIRS = [
+    "core",
     "apis",
     "common",
     "conf",
-    "storages",
-    "core",
     "deploy",
+    "storages",
+    "third_apis",
+    "extensions",
+    "scripts",
+    "tests",
     "extensions",
     "entrypoint",
-    "tests",
+    "tasks",
+    "releases",
 ]
 FILES = [
     ".gitignore",
