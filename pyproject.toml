@@ -9,6 +9,7 @@ version = "v0.01"
 description = "FastApi Start Kit"
 authors = ["phoenix <hypofiasco@gmail.com>"]
 
+
 [tool.poetry.dependencies]
 python = ">=3.9.0,<3.12"
 ipython = "8.14.0"
@@ -27,20 +28,21 @@ gunicorn = "20.1.0"
 loguru = "0.7.0"
 redis = "4.5.5"
 aiofiles = { extras = ["hiredis"], version = "23.1.0" }
-sentry-sdk = { extras = ["fastapi"], version = "1.25.0" }
-protobuf = "4.23.2"
-grpcio = "1.54.2"
-grpcio-tools = "1.54.2"
 tortoise-orm = { extras = ["aiomysql"], version = "0.19.3" }   # asyncpg
 fastapi-cache2 = { extras = ["redis"], version = "0.2.1" }
 typer = "0.9.0"
 aerich = "0.7.1"
-# strawberry-graphql = "0.165.1"
+captcha = "0.4"
 redis-om = "0.1.2"
 kubernetes = "26.1.0"
 rich = "13.4.1"
 pyinstrument = "4.5.0"    # profile,  py-spy
-captcha = "0.4"
+sentry-sdk = { extras = ["fastapi"], version = "1.25.0" }
+# strawberry-graphql = "0.165.1"
+protobuf = "4.23.2"
+grpcio = "1.54.2"
+grpcio-tools = "1.54.2"
+
 
 [tool.poetry.dev-dependencies]
 # poetry install --no-dev
@@ -55,6 +57,7 @@ hypothesis = "6.74.0"     # roperty-based tests, range fake data generate cases
 mimesis = "10.1.0"        # fake data generate
 py-spy = "0.3.14"         # profile
 
+
 # [[tool.poetry.source]]
 # name = "local"
 # default = true
@@ -66,7 +69,6 @@ tortoise_orm = "storages.relational.migrate.env.TORTOISE_ORM_CONFIG"
 location = "storages/relational/migrate/versions"
 src_folder = "./."
 
-# code check
 
 [tool.isort]
 atomic = true
@@ -74,9 +76,11 @@ profile = "black"
 use_parentheses = true
 ensure_newline_before_comments = true
 
+
 [tool.black]
 line-length = 79
 target-version = ["py39"]
+
 
 [tool.ruff]
 # Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
@@ -119,11 +123,9 @@ ignore = [
     "ANN003",  # annotation for kwargs
 ]
 # file ignore -> # ruff: noqa
-
 # Allow autofix for all enabled rules (when `--fix`) is provided.
 fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
 unfixable = []
-
 # Exclude a variety of commonly ignored directories.
 exclude = [
     ".bzr",
@@ -151,13 +153,11 @@ exclude = [
     "tests",
 ]
 per-file-ignores = {}
-
 line-length = 120
-
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-
 target-version = "py39"
+
 
 [tool.ruff.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
