@@ -2,6 +2,8 @@ from common.types import StrEnumMore
 
 
 class TagsEnum(StrEnumMore):
+    """Tags"""
+
     root = ("Root", "根目录")
     authorization = ("Authorization", "授权相关")
     account = ("Account", "账户信息管理")
@@ -14,5 +16,7 @@ class TagsEnum(StrEnumMore):
 
 
 class OuterAppTagsEnum(StrEnumMore):
+    """Outer Tags"""
+
     ping = ("Ping", "Ping")
     # >> 新增tag

@@ -3,6 +3,7 @@ ValidationErrorMsgTemplates = {
     "value_error.missing": "缺少必填字段",
     "value_error.any_str.max_length": "最长不超过{limit_value}个字符",
     "value_error.any_str.min_length": "至少{limit_value}个字符",
+    "value_error.const": "不合法的参数值'{given}', 合法候选项为{permitted}",
 }
 
 # 业务错误信息
@@ -27,6 +28,7 @@ TokenExpiredMsg = "授权已过期"
 BrokenAccessControl = "越权访问"
 ApikeyMissingMsg = "未携带apikey"
 ApikeyInvalidMsg = "apikey无效"
+RequestLimitedMsg = "请求频率限制"
 
 # Object 对象相关
 ObjectNotExistMsgTemplate = "%s不存在"

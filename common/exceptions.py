@@ -72,24 +72,45 @@ async def validation_exception_handler(
 ) -> AesResponse:
     """参数校验错误."""
     logger.bind(json=True, name="validation_exception_handler").info(exc.body)
+    # try:
+    #     error = exc.raw_errors[0]
+    #     error_exc = error.exc
+    #     error_exc_data = ujson.loads(error_exc.json())
+    #     field_name = error_exc_data[0]["loc"][0]
+    #     model = error_exc.model
+    #     fields: dict = model.__fields__
+    #     if field_name in fields:
+    #         field_name = (
+    #             fields[field_name].field_info.description or field_name
+    #         )
+    #     error_type = error_exc_data[0]["type"]
+    #     ctx = error_exc_data[0].get("ctx") or {}
+    #     msg = (
+    #         ValidationErrorMsgTemplates[error_type].format(**ctx)
+    #         if error_type in ValidationErrorMsgTemplates
+    #         else error_exc_data[0]["msg"]
+    #     )
+    # except AttributeError:
+    #     error_exc_data = ujson.loads(exc.json())
+    #     field_name = error_exc_data[0]["loc"][0]
+    #     msg = error_exc_data[0]["msg"]
     try:
+        error_list = exc.errors()
+        first_error_info = error_list[0]
         error = exc.raw_errors[0]
-        error_exc = error.exc
-        error_exc_data = ujson.loads(error_exc.json())
-        field_name = error_exc_data[0]["loc"][0]
-        model = error_exc.model
-        fields: dict = model.__fields__
-        if field_name in fields:
-            field_name = (
-                fields[field_name].field_info.description or field_name
-            )
-        error_type = error_exc_data[0]["type"]
-        ctx = error_exc_data[0].get("ctx") or {}
-        msg = (
-            ValidationErrorMsgTemplates[error_type].format(**ctx)
-            if error_type in ValidationErrorMsgTemplates
-            else error_exc_data[0]["msg"]
-        )
+        model = getattr(error.exc, "model", None)
+        field_name = first_error_info["loc"][1]
+        if model:
+            fields: dict = model.__fields__
+            if field_name in fields:
+                field_name = (
+                    fields[field_name].field_info.description or field_name
+                )
+        error_type = first_error_info["type"]
+        ctx = first_error_info["ctx"]
+        msg = first_error_info["msg"]
+        if error_type in ValidationErrorMsgTemplates:
+            msg = ValidationErrorMsgTemplates[error_type].format(**ctx)
     except AttributeError:
         error_exc_data = ujson.loads(exc.json())
         field_name = error_exc_data[0]["loc"][0]
@@ -99,7 +120,7 @@ async def validation_exception_handler(
         content={
             "code": ResponseCodeEnum.validation_error.value,
             "message": f"{field_name}: {msg}",
-            "data": error_exc_data,
+            "data": error_list,
         },
     )
 

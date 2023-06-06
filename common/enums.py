@@ -7,6 +7,7 @@ from common.constant.messages import (
     FrobiddenMsg,
     UnauthorizedMsg,
     ParameterErrorMsg,
+    RequestLimitedMsg,
     InternalServerErrorMsg,
 )
 
@@ -22,6 +23,7 @@ class ResponseCodeEnum(IntEnumMore):
     failed = (-1, FailedMsg)
     unauthorized = (-2, UnauthorizedMsg)
     validation_error = (-3, ParameterErrorMsg)
+    request_limited = (-4, RequestLimitedMsg)
 
     # http error code
     internal_error = (500, InternalServerErrorMsg)

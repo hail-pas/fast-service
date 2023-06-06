@@ -123,6 +123,10 @@ class StrEnumMore(str, MyEnum):
         obj = str.__new__(cls)
         obj._value_ = value
         obj._label = label
+        if not obj.__doc__:
+            raise Exception(
+                f"{cls.__module__}:{cls.__name__} lack of doc string",
+            )
         return obj
 
     def __str__(self) -> str:

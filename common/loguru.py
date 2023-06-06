@@ -28,6 +28,8 @@ LOG_LEVEL = logging.DEBUG if local_configs.PROJECT.DEBUG else logging.INFO
 
 
 class LogLevelEnum(StrEnumMore):
+    """日志级别"""
+
     CRITICAL = (logging.CRITICAL, "CRITICAL")
     # FATAL = ("50", "FATAL")
     ERROR = (logging.ERROR, "ERROR")

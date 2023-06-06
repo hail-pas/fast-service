@@ -1,8 +1,8 @@
 # ruff: noqa
 from typing import Any, Callable, Optional
 
-from aioredis import Redis, Connection, ConnectionPool
-from aioredis.client import KeyT, FieldT, ExpiryT, _ArgT
+from redis.typing import KeyT, FieldT, ExpiryT, EncodableT
+from redis.asyncio import Redis, Connection, ConnectionPool
 
 from conf.config import local_configs
 
@@ -101,18 +101,22 @@ class AsyncRedisUtil:
         return ret  # noqa
 
     @classmethod
-    async def set(cls, key: KeyT, value: _ArgT, exp: ExpiryT = None) -> Any:
+    async def set(
+        cls, key: KeyT, value: EncodableT, exp: ExpiryT = None
+    ) -> Any:
         return await cls._redis.set(key, value, ex=exp)
 
     @classmethod
-    async def get(cls, key: KeyT, default: _ArgT = None) -> Any:
+    async def get(cls, key: KeyT, default: EncodableT = None) -> Any:
         value = await cls._redis.get(key)
         if value is None:
             return default
         return value
 
     @classmethod
-    async def hget(cls, name: str, key: str, default: _ArgT = None) -> Any:
+    async def hget(
+        cls, name: str, key: str, default: EncodableT = None
+    ) -> Any:
         """缓存清除, 接收list or str."""
         v = await cls._redis.hget(name, key)
         if v is None:
@@ -123,8 +127,8 @@ class AsyncRedisUtil:
     async def get_or_set(
         cls,
         key: KeyT,
-        default: _ArgT | None = None,
-        value_func: Callable[[], tuple[_ArgT, ExpiryT]] = None,
+        default: EncodableT | None = None,
+        value_func: Callable[[], tuple[EncodableT, ExpiryT]] = None,
     ) -> Any:
         """获取或者设置缓存."""
         value = await cls._redis.get(key)
@@ -145,7 +149,7 @@ class AsyncRedisUtil:
     async def sadd(
         cls,
         name: KeyT,
-        values: list[_ArgT],
+        values: list[EncodableT],
         exp_of_none: ExpiryT = None,
     ) -> Any:
         cls._redis.sadd()
@@ -161,7 +165,7 @@ class AsyncRedisUtil:
         cls,
         name: KeyT,
         key: FieldT,
-        value: _ArgT,
+        value: EncodableT,
         exp_of_none: ExpiryT = None,
     ) -> Any:
         return await cls._exp_of_none(
@@ -219,8 +223,8 @@ class AsyncRedisUtil:
         )
 
     @classmethod
-    async def close(cls, inuse_connections: bool = False) -> None:
-        await cls._pool.disconnect(inuse_connections=inuse_connections)
+    async def close(cls) -> None:
+        await cls._redis.close()
 
 
 async def get_async_redis() -> ConnectionPool:

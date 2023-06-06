@@ -7,7 +7,7 @@ from common.types import IntEnumMore, StrEnumMore
 
 
 class SystemResourceTypeEnum(StrEnumMore):
-    """系统资源."""
+    """系统资源"""
 
     menu = ("menu", "菜单")
     button = ("button", "按钮")
@@ -15,20 +15,20 @@ class SystemResourceTypeEnum(StrEnumMore):
 
 
 class PermissionTypeEnum(StrEnumMore):
-    """权限类型."""
+    """权限类型"""
 
     api = ("api", "API")
 
 
 class StatusEnum(StrEnumMore):
-    """启用状态."""
+    """启用状态"""
 
     enable = ("enable", "启用")
     disable = ("disable", "禁用")
 
 
 class ProtocolEnum(StrEnumMore):
-    """协议."""
+    """协议"""
 
     https = ("https", "https")
     http = ("http", "http")
@@ -36,16 +36,22 @@ class ProtocolEnum(StrEnumMore):
 
 
 class RespFormatEnum(StrEnumMore):
+    """响应格式"""
+
     list_ = ("list", "列表")
     json_ = ("json", "JSON")
 
 
 class OrderEnum(StrEnumMore):
+    """排序方式"""
+
     ascendent = ("ascendent", "升序")
     descendent = ("descendent", "降序")
 
 
 class TaskTypeEnum(StrEnumMore):
+    """任务类型"""
+
     scheduled = ("scheduled", "定时任务")
     asynchronous = ("asynchronous", "异步任务")
 

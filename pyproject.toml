@@ -12,7 +12,7 @@ authors = ["phoenix <hypofiasco@gmail.com>"]
 [tool.poetry.dependencies]
 python = ">=3.9.0,<3.12"
 ipython = "8.14.0"
-fastapi = "0.95.2"
+fastapi = "0.96.0"
 starlette-context = "0.3.6"
 ujson = "5.7.0"  # 2.0.3
 httpx = "0.24.1"
@@ -25,13 +25,13 @@ python-multipart = "0.0.6"
 uvicorn = { extras = ["standard"], version = "0.22.0" }
 gunicorn = "20.1.0"
 loguru = "0.7.0"
-aioredis = "2.0.1"
+redis = "4.5.5"
 aiofiles = { extras = ["hiredis"], version = "23.1.0" }
 sentry-sdk = { extras = ["fastapi"], version = "1.25.0" }
 protobuf = "4.23.2"
 grpcio = "1.54.2"
 grpcio-tools = "1.54.2"
-tortoise-orm = { extras = ["aiomysql"], version = "0.19.3" }
+tortoise-orm = { extras = ["aiomysql"], version = "0.19.3" }   # asyncpg
 fastapi-cache2 = { extras = ["redis"], version = "0.2.1" }
 typer = "0.9.0"
 aerich = "0.7.1"
@@ -39,7 +39,8 @@ aerich = "0.7.1"
 redis-om = "0.1.2"
 kubernetes = "26.1.0"
 rich = "13.4.1"
-pyinstrument = "4.4.0"    # profile
+pyinstrument = "4.5.0"    # profile,  py-spy
+captcha = "0.4"
 
 [tool.poetry.dev-dependencies]
 # poetry install --no-dev

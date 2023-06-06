@@ -18,3 +18,4 @@ class RedisSearchIndexPrefix(str, Enum):
 class RedisCacheKey(str, Enum):
     RedisLockKey = RedisKeyPrefix + "RedisLock:{unique_key}"
     TaskPramsKey = RedisKeyPrefix + "TaskPrams:{task_id}:{param_id}"
+    CaptchaCodeKey = RedisKeyPrefix + "CaptchaCode:{unique_key}"
