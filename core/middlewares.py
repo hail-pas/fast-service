@@ -1,18 +1,14 @@
+from typing import Union
+
 from loguru import logger
 from pyinstrument import Profiler
-from starlette.types import Send, Scope, Message, Receive
 from fastapi.responses import HTMLResponse
 from starlette_context import request_cycle_context
-
-# from fastapi import Response
-from starlette.requests import Request
+from starlette.requests import Request, HTTPConnection
 from starlette.responses import Response
-from starlette_context.errors import MiddleWareValidationError
-from starlette.middleware.base import (
-    RequestResponseEndpoint,
-)  # BaseHTTPMiddleware,
+from starlette.middleware.base import RequestResponseEndpoint
 from starlette.middleware.cors import CORSMiddleware
-from starlette_context.middleware import RawContextMiddleware
+from starlette_context.plugins import Plugin
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from conf.config import local_configs
@@ -21,71 +17,71 @@ from common.context import (
     RequestProcessInfoPlugin,
     RequestStartTimestampPlugin,
 )
+from common.decorators import SingletonDecorator
 
 
-class LogWithContextMiddleware(RawContextMiddleware):
-    async def __call__(
-        self,
-        scope: Scope,
-        receive: Receive,
-        send: Send,
-    ) -> None:
-        if scope["type"] not in ("http", "websocket"):  # pragma: no cover
-            await self.app(scope, receive, send)
-            return None
-
-        async def send_wrapper(message: Message) -> None:
-            for plugin in self.plugins:
-                await plugin.enrich_response(message)
-            await send(message)
-
-        request = self.get_request_object(scope, receive, send)
-
-        try:
-            context = await self.set_context(request)
-        except MiddleWareValidationError as e:
-            error_response = e.error_response or self.error_response
-            return await self.send_response(error_response, send)
-
-        with request_cycle_context(context), logger.contextualize(
-            request_id=context.get(RequestIdPlugin.key),
-        ):
-            await self.app(scope, receive, send_wrapper)
-            return None
-
-
-async def profile_request(
+async def contex_middleware(
     request: Request,
     call_next: RequestResponseEndpoint,
 ) -> Response:
-    need_profile = request.query_params.get("profile", False)
-    secret = request.query_params.get("secret", "")
-    if need_profile and secret == local_configs.PROFILING.SECRET:
-        profiler = Profiler(
-            interval=local_configs.PROFILING.INTERVAL,
-            async_mode="enabled",
-        )
-        profiler.start()
-        await call_next(request)
-        profiler.stop()
-        return HTMLResponse(profiler.output_html())
-    return await call_next(request)
+    @SingletonDecorator
+    class ContextMiddleware:
+        plugins: list[Plugin]
+
+        def __init__(self, plugins: list[Plugin]) -> None:
+            self.plugins = plugins
+
+        async def set_context(
+            self,
+            request: Union[Request, HTTPConnection],
+        ) -> dict:
+            return {
+                plugin.key: await plugin.process_request(request)
+                for plugin in self.plugins
+            }
+
+        async def enrich_response(self, response: Response) -> None:
+            for i in self.plugins:
+                await i.enrich_response(response)
+
+        async def __call__(
+            self,
+            request: Request,
+            call_next: RequestResponseEndpoint,
+        ) -> Response:
+            context = await self.set_context(request)
+            with request_cycle_context(context), logger.contextualize(
+                request_id=context.get(RequestIdPlugin.key),
+            ):
+                need_profile = request.query_params.get("profile", False)
+                secret = request.query_params.get("secret", "")
+                if need_profile and secret == local_configs.PROFILING.SECRET:
+                    profiler = Profiler(
+                        interval=local_configs.PROFILING.INTERVAL,
+                        async_mode="enabled",
+                    )
+                    profiler.start()
+                    await call_next(request)
+                    profiler.stop()
+                    return HTMLResponse(profiler.output_html())
+                response = await call_next(request)
+                await self.enrich_response(response)
+                return response
+
+    _context_middleware = ContextMiddleware(
+        plugins=[
+            RequestStartTimestampPlugin(),
+            RequestIdPlugin(),
+            RequestProcessInfoPlugin(),
+        ],
+    )
+
+    return await _context_middleware(request, call_next)
 
 
 roster = [
     # >>>>> Middleware Func
-    profile_request,
-    [
-        LogWithContextMiddleware,
-        {
-            "plugins": (
-                RequestStartTimestampPlugin(),
-                RequestIdPlugin(),
-                RequestProcessInfoPlugin(),
-            ),
-        },
-    ],
-    # profile_request,
+    contex_middleware,
     # >>>>> Middleware Class
     [
         CORSMiddleware,

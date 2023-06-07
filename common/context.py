@@ -31,6 +31,8 @@ response_data_var: ContextVar[dict] = ContextVar(
 
 # enrich response 会触发两次 http.response.start、http.response.body
 class RequestIdPlugin(Plugin):
+    """请求唯一标识"""
+
     key = ContextKeyEnum.request_id.value
 
     async def process_request(
@@ -55,6 +57,8 @@ class RequestIdPlugin(Plugin):
 
 
 class RequestStartTimestampPlugin(Plugin):
+    """请求开始时间"""
+
     key = ContextKeyEnum.request_start_timestamp.value
 
     async def process_request(
@@ -86,20 +90,17 @@ class RequestProcessInfoPlugin(Plugin):
         process_time = (
             time.time() - context.get(RequestStartTimestampPlugin.key)
         ) * 1000  # ms
-        if response["type"] == "http.response.start":
-            # for ContextMiddleware
-            if isinstance(response, Response):
-                response.headers[
-                    ResponseHeaderKeyEnum.process_time.value
-                ] = str(process_time)
-            # for ContextPureMiddleware
-            else:
+        if isinstance(response, Response):
+            response.headers[ResponseHeaderKeyEnum.process_time.value] = str(
+                process_time,
+            )
+        else:
+            if response["type"] == "http.response.start":
                 headers = MutableHeaders(scope=response)
                 headers.append(
                     ResponseHeaderKeyEnum.process_time.value,
                     str(process_time),
                 )
-            return
         info_dict = context.get(self.key)
         info_dict["process_time"] = process_time
         code = context.get(ContextKeyEnum.response_code.value)
