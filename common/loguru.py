@@ -1,4 +1,3 @@
-import os
 import ast
 import sys
 import logging
@@ -12,9 +11,8 @@ from loguru import logger
 from gunicorn import glogging
 from rich.console import Console
 
-from conf.config import BASE_DIR, EnvironmentEnum, local_configs
+from conf.config import EnvironmentEnum, local_configs
 from common.types import Map, StrEnumMore
-from common.utils import datetime_now
 
 # from common.responses import ResponseCodeEnum
 from common.decorators import extend_enum
@@ -208,22 +206,22 @@ class GunicornLogger(glogging.Logger):
 def init_loguru() -> None:
     # loguru
     logger.remove()
-    logger.add(
-        sink=os.path.join(
-            BASE_DIR,
-            f'{local_configs.PROJECT.LOG_DIR}{datetime_now().strftime("%Y-%m-%d")}-{local_configs.PROJECT.UNIQUE_CODE}-service.log',
-        ),
-        rotation="500 MB",  # 日志文件最大限制500mb
-        retention="30 days",  # 最长保留30天
-        format="{message}",  # 日志显示格式
-        compression="zip",  # 压缩形式保存
-        encoding="utf-8",  # 编码
-        level=LOG_LEVEL,  # 日志级别
-        enqueue=True,  # 默认是线程安全的，enqueue=True使得多进程安全
-        serialize=True,
-        backtrace=True,
-        diagnose=True,
-    )
+    # logger.add(
+    #     sink=os.path.join(
+    #         BASE_DIR,
+    #         f'{local_configs.PROJECT.LOG_DIR}{datetime_now().strftime("%Y-%m-%d")}-{local_configs.PROJECT.UNIQUE_CODE}-service.log',
+    #     ),
+    #     rotation="500 MB",  # 日志文件最大限制500mb
+    #     retention="30 days",  # 最长保留30天
+    #     format="{message}",  # 日志显示格式
+    #     compression="zip",  # 压缩形式保存
+    #     encoding="utf-8",  # 编码
+    #     level=LOG_LEVEL,  # 日志级别
+    #     enqueue=True,  # 默认是线程安全的，enqueue=True使得多进程安全
+    #     serialize=True,
+    #     backtrace=True,
+    #     diagnose=True,
+    # )
     logger.add(
         sink=json_sink,
         format="{message}",  # 日志显示格式
