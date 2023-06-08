@@ -209,7 +209,8 @@ def init_loguru() -> None:
     # logger.add(
     #     sink=os.path.join(
     #         BASE_DIR,
-    #         f'{local_configs.PROJECT.LOG_DIR}{datetime_now().strftime("%Y-%m-%d")}-{local_configs.PROJECT.UNIQUE_CODE}-service.log',
+    #         f'{local_configs.PROJECT.LOG_DIR}{datetime_now().strftime("%Y-%m-%d")}'
+    #          '-{local_configs.PROJECT.UNIQUE_CODE}-service.log',
     #     ),
     #     rotation="500 MB",  # 日志文件最大限制500mb
     #     retention="30 days",  # 最长保留30天

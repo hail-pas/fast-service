@@ -229,7 +229,7 @@ class CURDGenerator(Generic[T], APIRouter):
                 "",
                 self._batch_delete(),
                 methods=["DELETE"],
-                response_model=Resp,  # type: ignore
+                response_model=Resp,
                 summary=f"批量删除{self.db_model_label}",
                 dependencies=delete_all_route,
             )
