@@ -17,7 +17,7 @@ async def get_auth_data(account: Account) -> AuthData:
     expired_at = datetime_now() + timedelta(
         minutes=local_configs.JWT.EXPIRATION_DELTA_MINUTES,
     )
-    payload = JwtPayload(account_id=account.id, expired_at=expired_at)
+    payload = JwtPayload(id=account.id, expired_at=expired_at)
     data = {
         "token_type": "Bearer",
         "access_token": Jwt(local_configs.JWT.SECRET).get_jwt(

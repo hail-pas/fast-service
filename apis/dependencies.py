@@ -19,6 +19,7 @@ from conf.config import local_configs
 from common.types import JwtPayload
 from common.utils import get_client_ip
 from common.encrypt import Jwt, SignAuth
+from common.fastapi import AuthorizedRequest
 from common.schemas import Pager, CURDPager
 from common.responses import ResponseCodeEnum
 from common.exceptions import ApiException
@@ -136,14 +137,14 @@ def paginate(
 
 
 async def token_required(
-    request: Request,
+    request: AuthorizedRequest,
     token: Annotated[HTTPAuthorizationCredentials, Depends(auth_schema)],
 ) -> Account:
     jwt_secret: str = local_configs.JWT.SECRET
     try:
         payload = Jwt(jwt_secret).decode(token.credentials)
         payload: JwtPayload = JwtPayload(**payload)
-        account_id = payload.account_id
+        account_id = payload.id
         if account_id is None:
             raise ApiException(
                 code=ResponseCodeEnum.unauthorized.value,
@@ -202,7 +203,7 @@ async def api_key_required(
 
 # depends on token_required
 async def api_permission_check(
-    request: Request,
+    request: AuthorizedRequest,
     account: Account = Depends(token_required),
     x_role_id: str = Header(title="角色id", description="使用的角色id"),
 ) -> Account:

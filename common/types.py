@@ -174,5 +174,7 @@ class Map(dict):
 
 
 class JwtPayload(BaseModel):
-    account_id: uuid.UUID
+    id: uuid.UUID
+    username: str
     expired_at: datetime
+    is_super_admin: bool

@@ -39,6 +39,8 @@ from common.exceptions import setup_exception_handlers
 class AuthorizedRequest(Request):
     """add additional attributes to request."""
 
+    _is_super_admin: bool = False
+
     from storages.relational.models import Role, Account
 
     def __init__(self, request: Request) -> None:
@@ -61,6 +63,10 @@ class AuthorizedRequest(Request):
             "role" in self.scope
         ), "Authentication Dependency must be installed to access request.role"
         return self.scope["role"]
+
+    @property
+    def is_super_admin(self) -> bool:
+        return self._is_super_admin
 
 
 async def serialize_response(

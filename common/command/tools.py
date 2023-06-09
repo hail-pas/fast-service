@@ -6,7 +6,7 @@ import typer
 
 tool_typer = typer.Typer(short_help="工具")
 
-src = pathlib.Path(__file__).parent.parent
+src = pathlib.Path(__file__).parent.parent.parent
 
 DIRS = [
     "core",
@@ -16,10 +16,8 @@ DIRS = [
     "deploy",
     "storages",
     "third_apis",
-    "extensions",
     "scripts",
     "tests",
-    "extensions",
     "entrypoint",
     "tasks",
     "releases",
@@ -30,6 +28,7 @@ FILES = [
     "manage.py",
     "pyproject.toml",
     "README.md",
+    "Makefile",
 ]
 
 
@@ -59,19 +58,21 @@ def copy_project(
 
     dest.mkdir()
 
+    print(src)
+
     def copy_file_in_dir(src_path: pathlib.Path, is_sub: bool = False) -> None:
-        if "__pycache__" in str(src_path) or ".DS_Store" in str(src_path):
-            return
         all_need = os.listdir(src_path)
         for need in all_need:
             if not is_sub and need not in FILES + DIRS:
                 continue
             current_src_path = src_path.joinpath(need)
             src_path_finds = re.findall(
-                ".*?fastpost/(?P<appendix>.*)",
+                ".*?fast-service/(?P<appendix>.*)",
                 str(current_src_path),
             )
             src_appendix = src_path_finds[0] if src_path_finds else ""
+            if "__pycache__" in src_appendix or ".DS_Store" in src_appendix:
+                continue
             dest_path = dest.joinpath(src_appendix)
 
             if current_src_path.is_file():
@@ -79,7 +80,12 @@ def copy_project(
                     dest_file = dest_path.open(mode="w", encoding="utf-8")
                     with open(current_src_path) as src_file:
                         for line in src_file:
-                            dest_file.write(line.replace("fastpost", name))
+                            dest_file.write(
+                                line.replace("fast-service", name).replace(
+                                    "FastService",
+                                    name,
+                                ),
+                            )
 
                     dest_file.close()
                     print("copied to ", dest_path, end="\n")
